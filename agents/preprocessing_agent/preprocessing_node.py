@@ -275,6 +275,7 @@ class PreprocessingNode:
         request = urllib.request.Request(
             url, data=data, headers={"Content-Type": "application/json"}
         )
+        # FIXME:  Read file correctly 
         try:
             with urllib.request.urlopen(request, timeout=20) as response:
                 body = response.read().decode("utf-8")
