@@ -202,30 +202,35 @@ Provide your analysis in a clear, structured format:
             state['step'] = 'error'
         
         return state
-    
+        
     def identify_target_node(self, state: AgentState) -> AgentState:
-        """Identify or validate the target column."""
         try:
             logger.info("Identifying target column")
             target_col = state.get('target_column')
-            
+
             if target_col:
                 self.data_analyzer.identify_target_column(target_col)
             else:
                 target_col = self.data_analyzer.identify_target_column()
-            
-            problem_type = self.data_analyzer.determine_problem_type()
-            
+
+            # ── FIX: only auto-detect problem type if not already set by orchestrator ──
+            problem_type = state.get('problem_type')
+            if not problem_type:
+                problem_type = self.data_analyzer.determine_problem_type()
+                logger.info(f"Problem type auto-detected: {problem_type}")
+            else:
+                logger.info(f"Problem type pre-set by orchestrator: {problem_type}")
+
             state['target_column'] = target_col
-            state['problem_type'] = problem_type
-            state['step'] = 'target_identified'
-            logger.info(f"Target column identified: {target_col}, Problem type: {problem_type}")
-            
+            state['problem_type']  = problem_type
+            state['step']          = 'target_identified'
+            logger.info(f"Target column: {target_col}, Problem type: {problem_type}")
+
         except Exception as e:
             logger.error(f"Error identifying target: {str(e)}", e)
             state['error'] = f"Failed to identify target: {str(e)}"
-            state['step'] = 'error'
-        
+            state['step']  = 'error'
+
         return state
     
     # def model_selection_agent(self, state: AgentState) -> AgentState:
@@ -425,11 +430,23 @@ Provide your analysis in a clear, structured format:
             except Exception as e:
                 training_insight = "Executing training strategy..."
             
-            # Execute training
-            data = state['data']
+            # 1. LOAD AND COERCE DATA TYPES
+            data = state['data'].copy()
             target_column = state['target_column']
+            
+            # FORCE Target to numeric for Regression
+            if state['problem_type'] == 'regression':
+                data[target_column] = pd.to_numeric(data[target_column], errors='coerce')
+                # Drop rows where target coercion failed (e.g. if there were actual strings)
+                data = data.dropna(subset=[target_column])
+
             problem_type = state['problem_type']
             X = data.drop(columns=[target_column])
+            # Automatically convert any other 'object' columns to numeric if possible
+            # This handles features that were also loaded as strings
+            for col in X.select_dtypes(include=['object']).columns:
+                X[col] = pd.to_numeric(X[col], errors='ignore')
+                
             X_encoded = pd.get_dummies(X, drop_first=True)
             y = data[target_column]
 
@@ -741,10 +758,18 @@ Provide your analysis and decision:
                 logger.info(f"Mapped 'classification' to '{ag_problem_type}' ({unique_targets} classes)")
             
             # Create a unique path for this predictor to avoid conflicts
-            import tempfile
+            # import tempfile
             # predictor_path = os.path.join(tempfile.gettempdir(), f"autogluon_predictor_{os.getpid()}_{int(time.time())}")
-            predictor_path = os.path.abspath("Output/AutoGluonModels")
-            os.makedirs(predictor_path, exist_ok=True)
+            from pathlib import Path
+            import time
+
+            # Anchor to dataset directory
+            base_dir = Path(self.dataset_path).resolve().parent
+
+            predictor_path = base_dir / "Output" / "AutoGluonModels" / f"run_{int(time.time())}"
+            predictor_path.mkdir(parents=True, exist_ok=True)
+
+            predictor_path = str(predictor_path)
             # Create predictor (AutoGluon will auto-select the best metric if not specified)
             predictor = TabularPredictor(
                 label=target_col_name,

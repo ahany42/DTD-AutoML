@@ -113,7 +113,7 @@ class DTDPipeline:
         """Second Analysis: Generate Directives for AutoML."""
         print("📊 [Stage 3] Running Post-Prep Analysis...")
 
-        df    = pd.read_csv(state['clean_data_path'])
+        df    = pd.read_csv(state['clean_data_path'], low_memory=False)
         agent = EDAAgent(df, target_column=state['target_column'], df_name="clean_data")
         agent.run(run_type="clean")
         results = agent.export(output_dir="Output/clean")
@@ -217,11 +217,26 @@ class DTDPipeline:
 if __name__ == "__main__":
     pipeline = DTDPipeline()
 
+    # inputs = {
+    #     "data_path":     "assets/data/Datasets/Regression Datasets/car_prices.csv",
+    #     "target_column": "sellingprice",
+    #     "task_type":     "regression"
+    # }
     inputs = {
-        "data_path":     "assets/data/Datasets/Regression Datasets/car_prices.csv",
-        "target_column": "sellingprice",
+        "data_path":     "assets/data/Datasets/Regression Datasets/California Housing Prices.csv",
+        "target_column": "median_house_value",
         "task_type":     "regression"
-    }
+    } #automl try to make it cls instead of regression
+    # inputs = {
+    #     "data_path":     "assets/data/Datasets/Classification Datasets/Titanic-Dataset.csv",
+    #     "target_column": "Survived",
+    #     "task_type":     "classification"
+    # }
+    # inputs = {
+    #     "data_path":     "assets/data/Datasets/Classification Datasets/Iris.csv",
+    #     "target_column": "Species",
+    #     "task_type":     "classification"
+    # }
 
     result = pipeline.workflow.invoke(inputs)
 

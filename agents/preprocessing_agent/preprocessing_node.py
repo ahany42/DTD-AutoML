@@ -144,6 +144,7 @@ class PreprocessingNode:
 
             # Load dataset
             df = pd.read_csv(dataset_path)
+            df = df.dropna(subset=[target_col]).reset_index(drop=True)
             self._validate_target_column(df, target_col)
 
             # Preprocess
@@ -154,6 +155,8 @@ class PreprocessingNode:
                 hash_features=hash_features,
                 max_label_categories=max_label_categories,
             )
+            if len(X) != len(y):
+                raise ValueError(f"Sync Error: X has {len(X)} rows, y has {len(y)} rows.")
             full_df = X.copy()
             full_df[target_col] = y.reset_index(drop=True)
             full_path = output_folder / "full_preprocessed.csv"

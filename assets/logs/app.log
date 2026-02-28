@@ -4255,3 +4255,485 @@ Traceback (most recent call last):
     raise ValueError(msg_err)
 ValueError: Input y contains NaN.
 
+
+
+=== New Run — 2026-02-28 15:27:56 ===
+
+
+=== New Run — 2026-02-28 15:29:12 ===
+[2026-02-28 15:29:15] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-28 15:29:27] [INFO] [EDA Agent] RAW analysis complete. Found 2 warnings.
+[2026-02-28 15:29:27] [WARNING]  - High-cardinality categoricals detected.
+[2026-02-28 15:29:27] [WARNING]  - Non-normal numeric columns (Shapiro-Wilk).
+[2026-02-28 15:29:27] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+
+
+=== New Run — 2026-02-28 15:33:48 ===
+
+
+=== New Run — 2026-02-28 15:33:53 ===
+[2026-02-28 15:33:54] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-28 15:34:01] [INFO] [EDA Agent] RAW analysis complete. Found 2 warnings.
+[2026-02-28 15:34:01] [WARNING]  - High-cardinality categoricals detected.
+[2026-02-28 15:34:01] [WARNING]  - Non-normal numeric columns (Shapiro-Wilk).
+[2026-02-28 15:34:01] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-02-28 15:35:01] [INFO] [EDA Agent] Starting CLEAN data analysis...
+[2026-02-28 15:35:20] [INFO] [EDA Agent] CLEAN analysis complete. Found 2 warnings.
+[2026-02-28 15:35:20] [WARNING]  - Numeric columns with > 5 % outliers (IQR).
+[2026-02-28 15:35:20] [WARNING]  - Non-normal numeric columns (Shapiro-Wilk).
+[2026-02-28 15:35:20] [INFO] [EDA Agent] Exporting artifacts for clean stage...
+[2026-02-28 15:35:20] [INFO] [EDA Agent] Generating Meaningful JSON directives for AutoML Agent...
+[2026-02-28 15:35:20] [INFO] [EDA Agent] AutoML context saved to Output/clean.
+[2026-02-28 15:35:31] [INFO] Starting AutoML agent workflow
+[2026-02-28 15:35:31] [INFO] Loading data from: Output\Preprocessing\full_preprocessed.csv
+[2026-02-28 15:35:36] [INFO] Data loaded successfully. Shape: (558825, 71)
+[2026-02-28 15:35:36] [INFO] Identifying target column
+[2026-02-28 15:35:36] [INFO] Target column identified: sellingprice, Problem type: regression
+[2026-02-28 15:35:36] [INFO] [Model Selection Agent] Starting selection using external directives
+[2026-02-28 15:35:44] [INFO] [Training Agent] Executing AutoGluon training strategy
+[2026-02-28 15:35:50] [INFO] [Training Agent] Running Optuna HPO to refine AutoGluon config...
+[2026-02-28 15:35:53] [INFO] [Optuna+AutoGluon] Starting 10 trials over config space
+[2026-02-28 15:35:53] [INFO] [Optuna+AutoGluon] LLM base config: {'models': ['GBM', 'XGB'], 'time_limit': 300, 'preset': 'best_quality'}
+[2026-02-28 15:35:53] [INFO] [Optuna+AutoGluon] Model subsets to explore: [['GBM'], ['XGB'], ['GBM', 'XGB']]
+[2026-02-28 15:37:22] [INFO] [Optuna+AutoGluon] Trial 0: preset=medium_quality, time=270s, models=['GBM'] → score=-1495.2766
+[2026-02-28 15:39:28] [WARNING] [Optuna+AutoGluon] Trial 1 failed: path is on mount 'D:', start on mount 'C:'
+[2026-02-28 15:40:44] [INFO] [Optuna+AutoGluon] Trial 2: preset=medium_quality, time=150s, models=['GBM'] → score=-1495.2766
+[2026-02-28 15:43:08] [WARNING] [Optuna+AutoGluon] Trial 3 failed: path is on mount 'D:', start on mount 'C:'
+[2026-02-28 15:46:45] [WARNING] [Optuna+AutoGluon] Trial 4 failed: path is on mount 'D:', start on mount 'C:'
+
+
+=== New Run — 2026-02-28 15:51:58 ===
+
+
+=== New Run — 2026-02-28 15:52:24 ===
+[2026-02-28 15:52:24] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-28 15:52:24] [INFO] [EDA Agent] RAW analysis complete. Found 1 warnings.
+[2026-02-28 15:52:24] [WARNING]  - Target shows class imbalance (majority/minority ≥ 3).
+[2026-02-28 15:52:24] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-02-28 15:52:27] [INFO] [EDA Agent] Starting CLEAN data analysis...
+[2026-02-28 15:52:29] [INFO] [EDA Agent] CLEAN analysis complete. Found 3 warnings.
+[2026-02-28 15:52:29] [WARNING]  - Numeric columns with > 5 % outliers (IQR).
+[2026-02-28 15:52:29] [WARNING]  - Non-normal numeric columns (Shapiro-Wilk).
+[2026-02-28 15:52:29] [WARNING]  - Target shows class imbalance (majority/minority ≥ 3).
+[2026-02-28 15:52:29] [INFO] [EDA Agent] Exporting artifacts for clean stage...
+[2026-02-28 15:52:29] [INFO] [EDA Agent] Generating Meaningful JSON directives for AutoML Agent...
+[2026-02-28 15:52:30] [INFO] [EDA Agent] AutoML context saved to Output/clean.
+[2026-02-28 15:52:32] [INFO] Starting AutoML agent workflow
+[2026-02-28 15:52:32] [INFO] Loading data from: Output\Preprocessing\full_preprocessed.csv
+[2026-02-28 15:52:32] [INFO] Data loaded successfully. Shape: (41281, 58)
+[2026-02-28 15:52:32] [INFO] Identifying target column
+[2026-02-28 15:52:32] [INFO] Target column identified: median_house_value, Problem type: classification
+[2026-02-28 15:52:32] [INFO] [Model Selection Agent] Starting selection using external directives
+[2026-02-28 15:52:39] [INFO] [Training Agent] Executing AutoGluon training strategy
+[2026-02-28 15:52:44] [INFO] [Training Agent] Running Optuna HPO to refine AutoGluon config...
+[2026-02-28 15:52:45] [INFO] [Optuna+AutoGluon] Starting 10 trials over config space
+[2026-02-28 15:52:45] [INFO] [Optuna+AutoGluon] LLM base config: {'models': ['GBM', 'XGB'], 'time_limit': 300, 'preset': 'best_quality'}
+[2026-02-28 15:52:45] [INFO] [Optuna+AutoGluon] Model subsets to explore: [['GBM'], ['XGB'], ['GBM', 'XGB']]
+[2026-02-28 15:52:49] [WARNING] [Optuna+AutoGluon] Trial 0 failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+[2026-02-28 15:52:51] [WARNING] [Optuna+AutoGluon] Trial 1 failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+[2026-02-28 15:52:52] [WARNING] [Optuna+AutoGluon] Trial 2 failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+[2026-02-28 15:52:53] [WARNING] [Optuna+AutoGluon] Trial 3 failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+[2026-02-28 15:52:54] [WARNING] [Optuna+AutoGluon] Trial 4 failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+[2026-02-28 15:52:55] [WARNING] [Optuna+AutoGluon] Trial 5 failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+[2026-02-28 15:52:57] [WARNING] [Optuna+AutoGluon] Trial 6 failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+[2026-02-28 15:52:58] [WARNING] [Optuna+AutoGluon] Trial 7 failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+[2026-02-28 15:53:00] [WARNING] [Optuna+AutoGluon] Trial 8 failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+[2026-02-28 15:53:01] [WARNING] [Optuna+AutoGluon] Trial 9 failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+[2026-02-28 15:53:01] [INFO] [Optuna+AutoGluon] Best config found: {'models': ['GBM'], 'time_limit': 270, 'preset': 'medium_quality'}
+[2026-02-28 15:53:01] [INFO] [Optuna+AutoGluon] Best score: -inf
+[2026-02-28 15:53:01] [INFO] [Training Agent] Refined config from Optuna: {'models': ['GBM'], 'time_limit': 270, 'preset': 'medium_quality'}
+[2026-02-28 15:53:01] [INFO] Initializing AutoGluon predictor with config: {'models': ['GBM'], 'time_limit': 270, 'preset': 'medium_quality'}
+[2026-02-28 15:53:01] [INFO] Mapped 'classification' to 'multiclass' (7244 classes)
+[2026-02-28 15:53:01] [WARNING] AutoGluon training failed: 'AutoMLAgent' object has no attribute 'dataset_path', falling back to simple training...
+[2026-02-28 15:53:01] [INFO] Training simple models with Optuna HPO: ['GBM']
+[2026-02-28 15:53:01] [INFO] [Optuna] Tuning GBM ...
+[2026-02-28 15:53:01] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 15:53:02] [WARNING] Failed to tune GBM: Unknown label type: unknown. Maybe you are trying to fit a classifier, which expects discrete classes on a regression target with continuous values.
+[2026-02-28 15:53:02] [WARNING] All selected models failed — falling back to default RandomForest
+[2026-02-28 15:53:02] [ERROR] [Training Agent] Error: Unknown label type: unknown. Maybe you are trying to fit a classifier, which expects discrete classes on a regression target with continuous values.
+Traceback (most recent call last):
+  File "D:\Codes\GP\GP code\agents\automl_agent\automl_agent.py", line 750, in _train_with_autogluon
+    base_dir = Path(self.dataset_path).resolve().parent
+AttributeError: 'AutoMLAgent' object has no attribute 'dataset_path'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "D:\Codes\GP\GP code\agents\automl_agent\automl_agent.py", line 462, in training_agent
+    trained_model, metrics = self._train_with_autogluon(
+  File "D:\Codes\GP\GP code\agents\automl_agent\automl_agent.py", line 871, in _train_with_autogluon
+    return self._train_simple_models(X, y, problem_type, [fallback_models[0]] if fallback_models else ['RandomForest'])
+  File "D:\Codes\GP\GP code\agents\automl_agent\automl_agent.py", line 1263, in _train_simple_models
+    best_model.fit(X_train, y_train)
+  File "D:\Codes\GP\GP code\venv\lib\site-packages\sklearn\base.py", line 1365, in wrapper
+    return fit_method(estimator, *args, **kwargs)
+  File "D:\Codes\GP\GP code\venv\lib\site-packages\sklearn\ensemble\_forest.py", line 418, in fit
+    y, expanded_class_weight = self._validate_y_class_weight(y)
+  File "D:\Codes\GP\GP code\venv\lib\site-packages\sklearn\ensemble\_forest.py", line 830, in _validate_y_class_weight
+    check_classification_targets(y)
+  File "D:\Codes\GP\GP code\venv\lib\site-packages\sklearn\utils\multiclass.py", line 221, in check_classification_targets
+    raise ValueError(
+ValueError: Unknown label type: unknown. Maybe you are trying to fit a classifier, which expects discrete classes on a regression target with continuous values.
+
+[2026-02-28 15:53:02] [ERROR] Workflow completed with error: Failed to train model: Unknown label type: unknown. Maybe you are trying to fit a classifier, which expects discrete classes on a regression target with continuous values.
+[2026-02-28 15:53:02] [INFO] [Save Outputs] JSON saved → Output\automl\results_20260228_155302.json
+[2026-02-28 15:53:02] [INFO] [Save Outputs] Markdown saved → Output\automl\report_20260228_155302.md
+[2026-02-28 15:53:02] [WARNING] [Save Outputs] No trained model found in state — skipping pickle.
+[2026-02-28 15:53:02] [INFO] [Save Outputs] ── Saved files ──────────────────────
+[2026-02-28 15:53:02] [INFO] [Save Outputs]   json       → Output\automl\results_20260228_155302.json
+[2026-02-28 15:53:02] [INFO] [Save Outputs]   markdown   → Output\automl\report_20260228_155302.md
+[2026-02-28 15:53:02] [INFO] [Save Outputs] ─────────────────────────────────────
+
+
+=== New Run — 2026-02-28 15:57:16 ===
+
+
+=== New Run — 2026-02-28 15:57:21 ===
+[2026-02-28 15:57:21] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-28 15:57:21] [INFO] [EDA Agent] RAW analysis complete. Found 2 warnings.
+[2026-02-28 15:57:21] [WARNING]  - Columns with > 50% missing values detected.
+[2026-02-28 15:57:21] [WARNING]  - High-cardinality categoricals detected.
+[2026-02-28 15:57:21] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+
+
+=== New Run — 2026-02-28 15:57:37 ===
+
+
+=== New Run — 2026-02-28 15:57:43 ===
+[2026-02-28 15:57:43] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-28 15:57:43] [INFO] [EDA Agent] RAW analysis complete. Found 3 warnings.
+[2026-02-28 15:57:43] [WARNING]  - Columns with > 50% missing values detected.
+[2026-02-28 15:57:43] [WARNING]  - High-cardinality categoricals detected.
+[2026-02-28 15:57:43] [WARNING]  - Target shows class imbalance (majority/minority ≥ 3).
+[2026-02-28 15:57:43] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-02-28 15:57:43] [INFO] [EDA Agent] Starting CLEAN data analysis...
+[2026-02-28 15:57:43] [INFO] [EDA Agent] CLEAN analysis complete. Found 3 warnings.
+[2026-02-28 15:57:43] [WARNING]  - Numeric columns with > 5 % outliers (IQR).
+[2026-02-28 15:57:43] [WARNING]  - Non-normal numeric columns (Shapiro-Wilk).
+[2026-02-28 15:57:43] [WARNING]  - Target shows class imbalance (majority/minority ≥ 3).
+[2026-02-28 15:57:43] [INFO] [EDA Agent] Exporting artifacts for clean stage...
+[2026-02-28 15:57:43] [INFO] [EDA Agent] Generating Meaningful JSON directives for AutoML Agent...
+[2026-02-28 15:57:43] [INFO] [EDA Agent] AutoML context saved to Output/clean.
+[2026-02-28 15:57:43] [INFO] Starting AutoML agent workflow
+[2026-02-28 15:57:43] [INFO] Loading data from: Output\Preprocessing\full_preprocessed.csv
+[2026-02-28 15:57:43] [INFO] Data loaded successfully. Shape: (1783, 22)
+[2026-02-28 15:57:43] [INFO] Identifying target column
+[2026-02-28 15:57:43] [INFO] Target column identified: Survived, Problem type: classification
+[2026-02-28 15:57:43] [INFO] [Model Selection Agent] Starting selection using external directives
+[2026-02-28 15:57:49] [INFO] [Training Agent] Executing AutoGluon training strategy
+[2026-02-28 15:57:54] [INFO] [Training Agent] Running Optuna HPO to refine AutoGluon config...
+[2026-02-28 15:57:55] [INFO] [Optuna+AutoGluon] Starting 10 trials over config space
+[2026-02-28 15:57:55] [INFO] [Optuna+AutoGluon] LLM base config: {'models': ['GBM', 'XGB'], 'time_limit': 300, 'preset': 'best_quality'}
+[2026-02-28 15:57:55] [INFO] [Optuna+AutoGluon] Model subsets to explore: [['GBM'], ['XGB'], ['GBM', 'XGB']]
+[2026-02-28 15:57:59] [INFO] [Optuna+AutoGluon] Trial 0: preset=medium_quality, time=270s, models=['GBM'] → score=0.8811
+[2026-02-28 15:58:14] [WARNING] [Optuna+AutoGluon] Trial 1 failed: path is on mount 'D:', start on mount 'C:'
+[2026-02-28 15:58:16] [INFO] [Optuna+AutoGluon] Trial 2: preset=medium_quality, time=150s, models=['GBM'] → score=0.8811
+[2026-02-28 15:58:26] [WARNING] [Optuna+AutoGluon] Trial 3 failed: path is on mount 'D:', start on mount 'C:'
+[2026-02-28 15:58:32] [WARNING] [Optuna+AutoGluon] Trial 4 failed: path is on mount 'D:', start on mount 'C:'
+[2026-02-28 15:58:41] [WARNING] [Optuna+AutoGluon] Trial 5 failed: path is on mount 'D:', start on mount 'C:'
+[2026-02-28 15:58:57] [WARNING] [Optuna+AutoGluon] Trial 6 failed: path is on mount 'D:', start on mount 'C:'
+[2026-02-28 15:59:03] [WARNING] [Optuna+AutoGluon] Trial 7 failed: path is on mount 'D:', start on mount 'C:'
+[2026-02-28 15:59:16] [WARNING] [Optuna+AutoGluon] Trial 8 failed: path is on mount 'D:', start on mount 'C:'
+[2026-02-28 15:59:28] [WARNING] [Optuna+AutoGluon] Trial 9 failed: path is on mount 'D:', start on mount 'C:'
+[2026-02-28 15:59:28] [INFO] [Optuna+AutoGluon] Best config found: {'models': ['GBM'], 'time_limit': 270, 'preset': 'medium_quality'}
+[2026-02-28 15:59:28] [INFO] [Optuna+AutoGluon] Best score: 0.8811
+[2026-02-28 15:59:28] [INFO] [Training Agent] Refined config from Optuna: {'models': ['GBM'], 'time_limit': 270, 'preset': 'medium_quality'}
+[2026-02-28 15:59:28] [INFO] Initializing AutoGluon predictor with config: {'models': ['GBM'], 'time_limit': 270, 'preset': 'medium_quality'}
+[2026-02-28 15:59:28] [INFO] Mapped 'classification' to 'multiclass' (3 classes)
+[2026-02-28 15:59:28] [WARNING] AutoGluon training failed: 'AutoMLAgent' object has no attribute 'dataset_path', falling back to simple training...
+[2026-02-28 15:59:28] [INFO] Training simple models with Optuna HPO: ['GBM']
+[2026-02-28 15:59:28] [INFO] [Optuna] Tuning GBM ...
+[2026-02-28 15:59:28] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 15:59:28] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 15:59:29] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 15:59:29] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 15:59:29] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 15:59:29] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 15:59:30] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 15:59:30] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 15:59:30] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 15:59:30] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 15:59:31] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 15:59:31] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 15:59:31] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 15:59:31] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 15:59:32] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 15:59:32] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 15:59:32] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 15:59:32] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 15:59:33] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 15:59:33] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 15:59:33] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 15:59:33] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 15:59:34] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 15:59:34] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 15:59:34] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 15:59:34] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 15:59:35] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 15:59:35] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 15:59:35] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 15:59:35] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 15:59:36] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 15:59:36] [INFO] [Optuna] GBM → best params: {}
+[2026-02-28 15:59:36] [INFO] [Optuna] GBM → accuracy: 0.9021
+[2026-02-28 15:59:36] [INFO] Best model: GBM with accuracy: 0.9021
+[2026-02-28 15:59:36] [INFO] [Training Agent] Confusion Matrix generated: [[203, 22], [17, 115]]
+[2026-02-28 15:59:42] [INFO] [Training Agent] Training complete. Score: 0.9021
+[2026-02-28 15:59:42] [INFO] Workflow completed successfully!
+[2026-02-28 15:59:42] [INFO] [Save Outputs] JSON saved → Output\automl\results_20260228_155942.json
+[2026-02-28 15:59:42] [INFO] [Save Outputs] Markdown saved → Output\automl\report_20260228_155942.md
+[2026-02-28 15:59:42] [INFO] [Save Outputs] AutoGluon predictor path pickled → Output\automl\best_model_20260228_155942.pkl
+[2026-02-28 15:59:42] [INFO] [Save Outputs] To reload: TabularPredictor.load('None')
+[2026-02-28 15:59:42] [INFO] [Save Outputs] ── Saved files ──────────────────────
+[2026-02-28 15:59:42] [INFO] [Save Outputs]   json       → Output\automl\results_20260228_155942.json
+[2026-02-28 15:59:42] [INFO] [Save Outputs]   markdown   → Output\automl\report_20260228_155942.md
+[2026-02-28 15:59:42] [INFO] [Save Outputs]   pickle     → Output\automl\best_model_20260228_155942.pkl
+[2026-02-28 15:59:42] [INFO] [Save Outputs] ─────────────────────────────────────
+
+
+=== New Run — 2026-02-28 16:16:18 ===
+
+
+=== New Run — 2026-02-28 16:16:56 ===
+[2026-02-28 16:16:56] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-28 16:16:56] [INFO] [EDA Agent] RAW analysis complete. Found 3 warnings.
+[2026-02-28 16:16:56] [WARNING]  - Columns with > 50% missing values detected.
+[2026-02-28 16:16:56] [WARNING]  - High-cardinality categoricals detected.
+[2026-02-28 16:16:56] [WARNING]  - Target shows class imbalance (majority/minority ≥ 3).
+[2026-02-28 16:16:56] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-02-28 16:16:57] [INFO] [EDA Agent] Starting CLEAN data analysis...
+[2026-02-28 16:16:57] [INFO] [EDA Agent] CLEAN analysis complete. Found 3 warnings.
+[2026-02-28 16:16:57] [WARNING]  - Numeric columns with > 5 % outliers (IQR).
+[2026-02-28 16:16:57] [WARNING]  - Non-normal numeric columns (Shapiro-Wilk).
+[2026-02-28 16:16:57] [WARNING]  - Target shows class imbalance (majority/minority ≥ 3).
+[2026-02-28 16:16:57] [INFO] [EDA Agent] Exporting artifacts for clean stage...
+[2026-02-28 16:16:57] [INFO] [EDA Agent] Generating Meaningful JSON directives for AutoML Agent...
+[2026-02-28 16:16:57] [INFO] [EDA Agent] AutoML context saved to Output/clean.
+[2026-02-28 16:16:57] [INFO] Starting AutoML agent workflow
+[2026-02-28 16:16:57] [INFO] Loading data from: Output\Preprocessing\full_preprocessed.csv
+[2026-02-28 16:16:57] [INFO] Data loaded successfully. Shape: (1783, 22)
+[2026-02-28 16:16:57] [INFO] Identifying target column
+[2026-02-28 16:16:57] [INFO] Target column identified: Survived, Problem type: classification
+[2026-02-28 16:16:57] [INFO] [Model Selection Agent] Starting selection using external directives
+[2026-02-28 16:17:03] [INFO] [Training Agent] Executing AutoGluon training strategy
+[2026-02-28 16:17:09] [INFO] [Training Agent] Running Optuna HPO to refine AutoGluon config...
+[2026-02-28 16:17:11] [INFO] [Optuna+AutoGluon] Starting 10 trials over config space
+[2026-02-28 16:17:11] [INFO] [Optuna+AutoGluon] LLM base config: {'models': ['GBM', 'XGB'], 'time_limit': 300, 'preset': 'best_quality'}
+[2026-02-28 16:17:11] [INFO] [Optuna+AutoGluon] Model subsets to explore: [['GBM'], ['XGB'], ['GBM', 'XGB']]
+[2026-02-28 16:17:25] [INFO] [Optuna+AutoGluon] Trial 0: preset=medium_quality, time=270s, models=['GBM'] → score=0.8811
+[2026-02-28 16:17:45] [WARNING] [Optuna+AutoGluon] Trial 1 failed: path is on mount 'D:', start on mount 'C:'
+[2026-02-28 16:17:47] [INFO] [Optuna+AutoGluon] Trial 2: preset=medium_quality, time=150s, models=['GBM'] → score=0.8811
+[2026-02-28 16:17:57] [WARNING] [Optuna+AutoGluon] Trial 3 failed: path is on mount 'D:', start on mount 'C:'
+[2026-02-28 16:18:06] [WARNING] [Optuna+AutoGluon] Trial 4 failed: path is on mount 'D:', start on mount 'C:'
+[2026-02-28 16:18:20] [WARNING] [Optuna+AutoGluon] Trial 5 failed: path is on mount 'D:', start on mount 'C:'
+[2026-02-28 16:18:42] [WARNING] [Optuna+AutoGluon] Trial 6 failed: path is on mount 'D:', start on mount 'C:'
+[2026-02-28 16:18:50] [WARNING] [Optuna+AutoGluon] Trial 7 failed: path is on mount 'D:', start on mount 'C:'
+[2026-02-28 16:19:03] [WARNING] [Optuna+AutoGluon] Trial 8 failed: path is on mount 'D:', start on mount 'C:'
+[2026-02-28 16:19:16] [WARNING] [Optuna+AutoGluon] Trial 9 failed: path is on mount 'D:', start on mount 'C:'
+[2026-02-28 16:19:16] [INFO] [Optuna+AutoGluon] Best config found: {'models': ['GBM'], 'time_limit': 270, 'preset': 'medium_quality'}
+[2026-02-28 16:19:16] [INFO] [Optuna+AutoGluon] Best score: 0.8811
+[2026-02-28 16:19:16] [INFO] [Training Agent] Refined config from Optuna: {'models': ['GBM'], 'time_limit': 270, 'preset': 'medium_quality'}
+[2026-02-28 16:19:16] [INFO] Initializing AutoGluon predictor with config: {'models': ['GBM'], 'time_limit': 270, 'preset': 'medium_quality'}
+[2026-02-28 16:19:16] [INFO] Mapped 'classification' to 'multiclass' (3 classes)
+[2026-02-28 16:19:16] [WARNING] AutoGluon training failed: 'AutoMLAgent' object has no attribute 'dataset_path', falling back to simple training...
+[2026-02-28 16:19:17] [INFO] Training simple models with Optuna HPO: ['GBM']
+[2026-02-28 16:19:17] [INFO] [Optuna] Tuning GBM ...
+[2026-02-28 16:19:17] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 16:19:17] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 16:19:18] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 16:19:18] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 16:19:18] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 16:19:18] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 16:19:19] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 16:19:19] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 16:19:19] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 16:19:19] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 16:19:20] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 16:19:20] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 16:19:20] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 16:19:20] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 16:19:21] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 16:19:21] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 16:19:21] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 16:19:21] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 16:19:22] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 16:19:22] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 16:19:22] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 16:19:22] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 16:19:22] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 16:19:23] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 16:19:23] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 16:19:23] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 16:19:23] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 16:19:24] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 16:19:24] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 16:19:24] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 16:19:24] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 16:19:25] [INFO] [Optuna] GBM → best params: {}
+[2026-02-28 16:19:25] [INFO] [Optuna] GBM → accuracy: 0.9021
+[2026-02-28 16:19:25] [INFO] Best model: GBM with accuracy: 0.9021
+[2026-02-28 16:19:25] [INFO] [Training Agent] Confusion Matrix generated: [[203, 22], [17, 115]]
+[2026-02-28 16:19:28] [INFO] [Training Agent] Training complete. Score: 0.9021
+[2026-02-28 16:19:28] [INFO] Workflow completed successfully!
+[2026-02-28 16:19:28] [INFO] [Save Outputs] JSON saved → Output\automl\results_20260228_161928.json
+[2026-02-28 16:19:28] [INFO] [Save Outputs] Markdown saved → Output\automl\report_20260228_161928.md
+[2026-02-28 16:19:28] [INFO] [Save Outputs] AutoGluon predictor path pickled → Output\automl\best_model_20260228_161928.pkl
+[2026-02-28 16:19:28] [INFO] [Save Outputs] To reload: TabularPredictor.load('None')
+[2026-02-28 16:19:28] [INFO] [Save Outputs] ── Saved files ──────────────────────
+[2026-02-28 16:19:28] [INFO] [Save Outputs]   json       → Output\automl\results_20260228_161928.json
+[2026-02-28 16:19:28] [INFO] [Save Outputs]   markdown   → Output\automl\report_20260228_161928.md
+[2026-02-28 16:19:28] [INFO] [Save Outputs]   pickle     → Output\automl\best_model_20260228_161928.pkl
+[2026-02-28 16:19:28] [INFO] [Save Outputs] ─────────────────────────────────────
+
+
+=== New Run — 2026-02-28 17:26:30 ===
+
+
+=== New Run — 2026-02-28 17:27:19 ===
+[2026-02-28 17:27:19] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-28 17:27:20] [INFO] [EDA Agent] RAW analysis complete. Found 1 warnings.
+[2026-02-28 17:27:20] [WARNING]  - Target shows class imbalance (majority/minority ≥ 3).
+[2026-02-28 17:27:20] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-02-28 17:27:24] [INFO] [EDA Agent] Starting CLEAN data analysis...
+[2026-02-28 17:27:26] [INFO] [EDA Agent] CLEAN analysis complete. Found 3 warnings.
+[2026-02-28 17:27:26] [WARNING]  - Numeric columns with > 5 % outliers (IQR).
+[2026-02-28 17:27:26] [WARNING]  - Non-normal numeric columns (Shapiro-Wilk).
+[2026-02-28 17:27:26] [WARNING]  - Target shows class imbalance (majority/minority ≥ 3).
+[2026-02-28 17:27:26] [INFO] [EDA Agent] Exporting artifacts for clean stage...
+[2026-02-28 17:27:26] [INFO] [EDA Agent] Generating Meaningful JSON directives for AutoML Agent...
+[2026-02-28 17:27:27] [INFO] [EDA Agent] AutoML context saved to Output/clean.
+[2026-02-28 17:27:30] [INFO] Starting AutoML agent workflow
+[2026-02-28 17:27:30] [INFO] Loading data from: Output\Preprocessing\full_preprocessed.csv
+[2026-02-28 17:27:30] [INFO] Data loaded successfully. Shape: (41281, 58)
+[2026-02-28 17:27:30] [INFO] Identifying target column
+[2026-02-28 17:27:30] [INFO] Target column identified: median_house_value, Problem type: classification
+[2026-02-28 17:27:30] [INFO] [Model Selection Agent] Starting selection using external directives
+[2026-02-28 17:28:06] [ERROR] [Model Selection Agent] Error: Error calling model 'gemini-2.5-flash' (RESOURCE_EXHAUSTED): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\nPlease retry in 29.334907642s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.5-flash'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '29s'}]}}
+[2026-02-28 17:28:06] [INFO] [Training Agent] Executing simple training strategy
+[2026-02-28 17:28:07] [INFO] Training simple models with Optuna HPO: ['RandomForest']
+[2026-02-28 17:28:07] [INFO] [Optuna] Tuning RandomForest ...
+[2026-02-28 17:28:07] [WARNING] Failed to tune RandomForest: Unknown label type: unknown. Maybe you are trying to fit a classifier, which expects discrete classes on a regression target with continuous values.
+[2026-02-28 17:28:07] [WARNING] All selected models failed — falling back to default RandomForest
+[2026-02-28 17:28:07] [ERROR] [Training Agent] Error: Unknown label type: unknown. Maybe you are trying to fit a classifier, which expects discrete classes on a regression target with continuous values.
+Traceback (most recent call last):
+  File "D:\Codes\GP\GP code\agents\automl_agent\automl_agent.py", line 470, in training_agent
+    trained_model, metrics = self._train_simple_models(X_train, y_train, state['problem_type'], selected_models)
+  File "D:\Codes\GP\GP code\agents\automl_agent\automl_agent.py", line 1263, in _train_simple_models
+    best_model.fit(X_train, y_train)
+  File "D:\Codes\GP\GP code\venv\lib\site-packages\sklearn\base.py", line 1365, in wrapper
+    return fit_method(estimator, *args, **kwargs)
+  File "D:\Codes\GP\GP code\venv\lib\site-packages\sklearn\ensemble\_forest.py", line 418, in fit
+    y, expanded_class_weight = self._validate_y_class_weight(y)
+  File "D:\Codes\GP\GP code\venv\lib\site-packages\sklearn\ensemble\_forest.py", line 830, in _validate_y_class_weight
+    check_classification_targets(y)
+  File "D:\Codes\GP\GP code\venv\lib\site-packages\sklearn\utils\multiclass.py", line 221, in check_classification_targets
+    raise ValueError(
+ValueError: Unknown label type: unknown. Maybe you are trying to fit a classifier, which expects discrete classes on a regression target with continuous values.
+
+[2026-02-28 17:28:07] [ERROR] Workflow completed with error: Failed to train model: Unknown label type: unknown. Maybe you are trying to fit a classifier, which expects discrete classes on a regression target with continuous values.
+[2026-02-28 17:28:07] [INFO] [Save Outputs] JSON saved → Output\automl\results_20260228_172807.json
+[2026-02-28 17:28:07] [INFO] [Save Outputs] Markdown saved → Output\automl\report_20260228_172807.md
+[2026-02-28 17:28:07] [WARNING] [Save Outputs] No trained model found in state — skipping pickle.
+[2026-02-28 17:28:07] [INFO] [Save Outputs] ── Saved files ──────────────────────
+[2026-02-28 17:28:07] [INFO] [Save Outputs]   json       → Output\automl\results_20260228_172807.json
+[2026-02-28 17:28:07] [INFO] [Save Outputs]   markdown   → Output\automl\report_20260228_172807.md
+[2026-02-28 17:28:07] [INFO] [Save Outputs] ─────────────────────────────────────
+
+
+=== New Run — 2026-02-28 17:36:28 ===
+
+
+=== New Run — 2026-02-28 17:36:35 ===
+[2026-02-28 17:36:35] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-28 17:36:35] [INFO] [EDA Agent] RAW analysis complete. Found 0 warnings.
+[2026-02-28 17:36:35] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-02-28 17:36:39] [INFO] [EDA Agent] Starting CLEAN data analysis...
+
+
+=== New Run — 2026-02-28 17:39:14 ===
+
+
+=== New Run — 2026-02-28 17:39:28 ===
+[2026-02-28 17:39:28] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-28 17:39:29] [INFO] [EDA Agent] RAW analysis complete. Found 0 warnings.
+[2026-02-28 17:39:29] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-02-28 17:39:37] [INFO] [EDA Agent] Starting CLEAN data analysis...
+[2026-02-28 17:39:42] [INFO] [EDA Agent] CLEAN analysis complete. Found 2 warnings.
+[2026-02-28 17:39:42] [WARNING]  - Numeric columns with > 5 % outliers (IQR).
+[2026-02-28 17:39:42] [WARNING]  - Non-normal numeric columns (Shapiro-Wilk).
+[2026-02-28 17:39:42] [INFO] [EDA Agent] Exporting artifacts for clean stage...
+[2026-02-28 17:39:42] [INFO] [EDA Agent] Generating Meaningful JSON directives for AutoML Agent...
+[2026-02-28 17:39:43] [INFO] [EDA Agent] AutoML context saved to Output/clean.
+[2026-02-28 17:39:45] [INFO] Starting AutoML agent workflow
+[2026-02-28 17:39:45] [INFO] Loading data from: Output\Preprocessing\full_preprocessed.csv
+[2026-02-28 17:39:45] [INFO] Data loaded successfully. Shape: (41281, 58)
+[2026-02-28 17:39:45] [INFO] Identifying target column
+[2026-02-28 17:39:45] [INFO] Problem type pre-set by orchestrator: regression
+[2026-02-28 17:39:45] [INFO] Target column: median_house_value, Problem type: regression
+[2026-02-28 17:39:45] [INFO] [Model Selection Agent] Starting selection using external directives
+[2026-02-28 17:40:09] [INFO] [Training Agent] Executing AutoGluon training strategy
+[2026-02-28 17:40:50] [INFO] [Training Agent] Running Optuna HPO to refine AutoGluon config...
+[2026-02-28 17:40:53] [INFO] [Optuna+AutoGluon] Starting 10 trials over config space
+[2026-02-28 17:40:53] [INFO] [Optuna+AutoGluon] LLM base config: {'models': ['GBM', 'XGB'], 'time_limit': 300, 'preset': 'best_quality'}
+[2026-02-28 17:40:53] [INFO] [Optuna+AutoGluon] Model subsets to explore: [['GBM'], ['XGB'], ['GBM', 'XGB']]
+[2026-02-28 17:41:09] [WARNING] [Optuna+AutoGluon] Trial 0 failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+[2026-02-28 17:41:23] [WARNING] [Optuna+AutoGluon] Trial 1 failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+[2026-02-28 17:41:25] [WARNING] [Optuna+AutoGluon] Trial 2 failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+[2026-02-28 17:41:26] [WARNING] [Optuna+AutoGluon] Trial 3 failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+[2026-02-28 17:41:49] [WARNING] [Optuna+AutoGluon] Trial 4 failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+[2026-02-28 17:41:52] [WARNING] [Optuna+AutoGluon] Trial 5 failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+[2026-02-28 17:42:17] [WARNING] [Optuna+AutoGluon] Trial 6 failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+[2026-02-28 17:42:46] [WARNING] [Optuna+AutoGluon] Trial 7 failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+[2026-02-28 17:42:47] [WARNING] [Optuna+AutoGluon] Trial 8 failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+[2026-02-28 17:42:50] [WARNING] [Optuna+AutoGluon] Trial 9 failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+[2026-02-28 17:42:50] [INFO] [Optuna+AutoGluon] Best config found: {'models': ['GBM'], 'time_limit': 270, 'preset': 'medium_quality'}
+[2026-02-28 17:42:50] [INFO] [Optuna+AutoGluon] Best score: -inf
+[2026-02-28 17:42:50] [INFO] [Training Agent] Refined config from Optuna: {'models': ['GBM'], 'time_limit': 270, 'preset': 'medium_quality'}
+[2026-02-28 17:42:50] [INFO] Initializing AutoGluon predictor with config: {'models': ['GBM'], 'time_limit': 270, 'preset': 'medium_quality'}
+[2026-02-28 17:42:50] [WARNING] AutoGluon training failed: 'AutoMLAgent' object has no attribute 'dataset_path', falling back to simple training...
+[2026-02-28 17:42:50] [INFO] Training simple models with Optuna HPO: ['GBM']
+[2026-02-28 17:42:50] [INFO] [Optuna] Tuning GBM ...
+[2026-02-28 17:42:50] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 17:42:57] [WARNING] Failed to tune GBM: could not convert string to float: 'median_house_value'
+[2026-02-28 17:42:57] [WARNING] All selected models failed — falling back to default RandomForest
+
+
+=== New Run — 2026-02-28 17:49:35 ===
+
+
+=== New Run — 2026-02-28 17:49:42 ===
+[2026-02-28 17:49:42] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-28 17:49:42] [INFO] [EDA Agent] RAW analysis complete. Found 0 warnings.
+[2026-02-28 17:49:42] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-02-28 17:49:46] [INFO] [EDA Agent] Starting CLEAN data analysis...
+[2026-02-28 17:49:48] [INFO] [EDA Agent] CLEAN analysis complete. Found 2 warnings.
+[2026-02-28 17:49:48] [WARNING]  - Numeric columns with > 5 % outliers (IQR).
+[2026-02-28 17:49:48] [WARNING]  - Non-normal numeric columns (Shapiro-Wilk).
+[2026-02-28 17:49:48] [INFO] [EDA Agent] Exporting artifacts for clean stage...
+[2026-02-28 17:49:48] [INFO] [EDA Agent] Generating Meaningful JSON directives for AutoML Agent...
+[2026-02-28 17:49:49] [INFO] [EDA Agent] AutoML context saved to Output/clean.
+[2026-02-28 17:49:51] [INFO] Starting AutoML agent workflow
+[2026-02-28 17:49:51] [INFO] Loading data from: Output\Preprocessing\full_preprocessed.csv
+[2026-02-28 17:49:51] [INFO] Data loaded successfully. Shape: (41281, 58)
+[2026-02-28 17:49:51] [INFO] Identifying target column
+[2026-02-28 17:49:51] [INFO] Problem type pre-set by orchestrator: regression
+[2026-02-28 17:49:51] [INFO] Target column: median_house_value, Problem type: regression
+[2026-02-28 17:49:51] [INFO] [Model Selection Agent] Starting selection using external directives
+[2026-02-28 17:50:26] [ERROR] [Model Selection Agent] Error: Error calling model 'gemini-2.5-flash' (RESOURCE_EXHAUSTED): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\nPlease retry in 8.894245469s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.5-flash'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '8s'}]}}
+[2026-02-28 17:50:26] [INFO] [Training Agent] Executing simple training strategy
+[2026-02-28 17:50:26] [INFO] Training simple models with Optuna HPO: ['RandomForest']
+[2026-02-28 17:50:26] [INFO] [Optuna] Tuning RandomForest ...
+[2026-02-28 17:51:57] [INFO] [Optuna] RandomForest → best params: {'n_estimators': 50, 'max_depth': 18, 'min_samples_split': 10, 'min_samples_leaf': 5, 'max_features': None}
+[2026-02-28 17:51:57] [INFO] [Optuna] RandomForest → r2_score: 0.3589
+[2026-02-28 17:51:57] [INFO] Best model: RandomForest with r2_score: 0.3589
+[2026-02-28 17:52:33] [WARNING] Could not get LLM interpretation: Error calling model 'gemini-2.5-flash' (RESOURCE_EXHAUSTED): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\nPlease retry in 2.385542142s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.5-flash'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '2s'}]}}
+[2026-02-28 17:52:33] [INFO] [Training Agent] Training complete. Score: 0.3589
+[2026-02-28 17:52:33] [ERROR] Workflow completed with error: Failed in model selection: Error calling model 'gemini-2.5-flash' (RESOURCE_EXHAUSTED): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\nPlease retry in 8.894245469s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.5-flash'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '8s'}]}}
+[2026-02-28 17:52:33] [INFO] [Save Outputs] JSON saved → Output\automl\results_20260228_175233.json
+[2026-02-28 17:52:33] [INFO] [Save Outputs] Markdown saved → Output\automl\report_20260228_175233.md
+[2026-02-28 17:52:33] [INFO] [Save Outputs] Sklearn model pickled → Output\automl\best_model_20260228_175233.pkl
+[2026-02-28 17:52:33] [INFO] [Save Outputs] ── Saved files ──────────────────────
+[2026-02-28 17:52:33] [INFO] [Save Outputs]   json       → Output\automl\results_20260228_175233.json
+[2026-02-28 17:52:33] [INFO] [Save Outputs]   markdown   → Output\automl\report_20260228_175233.md
+[2026-02-28 17:52:33] [INFO] [Save Outputs]   pickle     → Output\automl\best_model_20260228_175233.pkl
+[2026-02-28 17:52:33] [INFO] [Save Outputs] ─────────────────────────────────────
