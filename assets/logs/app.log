@@ -3920,3 +3920,14 @@ Feature names seen at fit time, yet now missing:
 [2026-03-05 23:12:47] [INFO] [EDA Agent] RAW analysis complete. Found 1 warnings.
 [2026-03-05 23:12:47] [WARNING]  - Columns with > 50% missing values detected.
 [2026-03-05 23:12:47] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+
+
+=== New Run — 2026-03-07 23:03:03 ===
+[2026-03-07 23:03:03] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-03-07 23:03:03] [INFO] [EDA Agent] RAW analysis complete. Found 5 warnings.
+[2026-03-07 23:03:03] [WARNING]  - Columns with > 50% missing values detected.
+[2026-03-07 23:03:03] [WARNING]  - High-cardinality categoricals detected.
+[2026-03-07 23:03:03] [WARNING]  - Likely identifier columns (unique per row).
+[2026-03-07 23:03:03] [WARNING]  - Numeric columns with > 5 % outliers (IQR).
+[2026-03-07 23:03:03] [WARNING]  - Non-normal numeric columns (Shapiro-Wilk).
+[2026-03-07 23:03:03] [INFO] [EDA Agent] Exporting artifacts for raw stage...
