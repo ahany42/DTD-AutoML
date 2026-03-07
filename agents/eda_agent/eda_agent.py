@@ -1,7 +1,6 @@
 import json
 import pandas as pd
 import numpy as np
-import seaborn as sns
 from typing import Optional, Dict, Any, List
 from pathlib import Path
 from scipy import stats as scipy_stats
@@ -42,7 +41,7 @@ class EDAAgent:
         df_name: str = "dataset",
         top_k: int = 5,
     ):
-        self.df = df
+        self.df = df[~df.apply(lambda row: all(str(row[c]) == c for c in df.columns), axis=1)].reset_index(drop=True)
         self.target = target_column
         self.df_name = df_name
         self.top_k = top_k
@@ -680,38 +679,132 @@ class EDAAgent:
     # OUTPUT C — Frontend-ready JSON
     # ==================================================================
     
+    # def generate_frontend_json(self, output_dir: str = "Output") -> str:
+    #     """
+    #     Builds a comprehensive JSON containing raw stats and chart-ready data.
+    #     """
+    #     if not self.report:
+    #         raise ValueError("Run EDA before generating frontend data.")
+
+    #     # Prepare Chart Data for Frontend
+    #     visualizations = {
+    #         "missing_values_chart": self._get_missing_values_data(),
+    #         "numeric_distributions": self._get_numeric_distribution_data(),
+    #         "categorical_distributions": self._get_categorical_distribution_data(),
+    #         "correlation_matrix": self._get_correlation_matrix_data(),
+    #     }
+
+    #     frontend_payload = {
+    #         "metadata": {
+    #             "df_name": self.df_name,
+    #             "timestamp": pd.Timestamp.now().isoformat(),
+    #             "run_type": self.report["run_type"]
+    #         },
+    #         "report": self.report,
+    #         "visualizations": visualizations
+    #     }
+
+    #     path = Path(output_dir)
+    #     path.mkdir(parents=True, exist_ok=True)
+    #     json_path = path / f"{self.df_name}_frontend_data.json"
+        
+    #     with open(json_path, "w", encoding="utf-8") as f:
+    #         json.dump(frontend_payload, f, indent=2, default=str)
+            
+    #     return str(json_path)
+
     def generate_frontend_json(self, output_dir: str = "Output") -> str:
-        """
-        Builds a comprehensive JSON containing raw stats and chart-ready data.
-        """
-        if not self.report:
-            raise ValueError("Run EDA before generating frontend data.")
 
-        # Prepare Chart Data for Frontend
-        visualizations = {
-            "missing_values_chart": self._get_missing_values_data(),
-            "numeric_distributions": self._get_numeric_distribution_data(),
-            "categorical_distributions": self._get_categorical_distribution_data(),
-            "correlation_matrix": self._get_correlation_matrix_data(),
-        }
+        report = self.report
+        summary = report["dataset_summary"]
+        target = report["target_analysis"]
+        quality = report["data_quality_report"]
+        relationships = report["relationship_insights"]
+        columns = report["column_profiles"]
+        warnings = report["eda_warnings"]   
+        relationships  = report.get("relationship_insights") or {}
+        target_relationships = relationships.get("target_relationships") or {}
+        target_rels = target_relationships if isinstance(target_relationships, dict) else {}
+        frontend_json = {
 
-        frontend_payload = {
-            "metadata": {
-                "df_name": self.df_name,
-                "timestamp": pd.Timestamp.now().isoformat(),
-                "run_type": self.report["run_type"]
-            },
-            "report": self.report,
-            "visualizations": visualizations
-        }
-
+             "meta": [
+                {"title": "Agent",        "value": f"{self.df_name}_analysis"},
+                {"title": "Stage",        "value": report["run_type"]},
+                {"title": "Dataset Name", "value": self.df_name},
+                {"title": "Timestamp",    "value": pd.Timestamp.now().isoformat()},
+],  
+            "summary": [
+                {"title": "Rows", "value": summary["n_rows"]},
+                {"title": "Columns", "value": summary["n_columns"]},
+                {"title": "Memory (MB)", "value": summary["memory_usage_mb"]},
+                {"title": "Duplicate Rows", "value": summary["duplicate_rows"]},
+                {"title": "Duplicate Ratio", "value": quality["duplicates"]["duplicate_ratio"]},
+                {"title": "Target Column", "value": summary["target_column"]},
+                {"title": "Target Dtype", "value": summary["target_dtype"]},
+                {"title": "Total Feature Count", "value": report["total_feature_count"]}
+            ],  
+            "target_analysis": [
+                {"title": "Task Type", "value": target["task_type"]},
+                {"title": "Is Binary", "value": target["is_binary"]},
+                {"title": "Number of Classes", "value": target["n_classes"]},
+                {"title": "Imbalance Ratio", "value": target["imbalance_ratio"]},
+                {"title": "Imbalance Severity", "value": target["imbalance_severity"]},
+                {"title": "Entropy", "value": target["target_entropy"]},
+                {"title": "Requires Stratification", "value": target["requires_stratification"]},
+                {
+                    "title": "Class Distribution",
+                    "value": [
+                        {"class": str(k), "ratio": v}
+                        for k, v in target["class_distribution"].items()
+                    ]
+                }
+            ],  
+            "data_quality": [
+                {"title": "Total Missing Cells", "value": quality["missing_values"]["total_missing_cells"]},
+                {"title": "Duplicate Count", "value": summary["duplicate_rows"]},
+                {"title": "Duplicate Ratio", "value": quality["duplicates"]["duplicate_ratio"]}
+            ], 
+            "relationships": [
+                {"title": f"{col} (Cramer's V)", "value": val}
+                for col, val in (target_rels.get("cramers_v") or {}).items()
+            ] if target_rels.get("target_type") == "categorical" else [
+                {"title": f"{col} (Pearson r)", "value": val}
+                for col, val in (target_rels.get("feature_correlations") or {}).items()
+            ],
+           "columns": [
+            {
+                "title": col_name,
+                "type": profile["data_type"],
+                "missing_count": profile["missing_count"],
+                "unique_count": profile["unique_count"],
+                "high_cardinality": profile.get("is_high_cardinality", False),  # .get() — key absent on numeric cols
+                "top_values": [
+                    {"value": str(v), "count": int(c)}
+                    for v, c in profile["top_values"].items()  # ← .items() goes HERE, on the dict itself
+                ] if "top_values" in profile else []
+            }
+            for col_name, profile in columns.items()      
+            ],  
+            "warnings": [
+                {
+                    "title": w["type"].replace("_", " ").title(),
+                    "columns": w.get("columns", []),
+                    "message": w["message"]
+                }
+                for w in warnings
+            ]
+        }   
         path = Path(output_dir)
         path.mkdir(parents=True, exist_ok=True)
+
+        # Build JSON file path
         json_path = path / f"{self.df_name}_frontend_data.json"
-        
+
+        # Save JSON file
         with open(json_path, "w", encoding="utf-8") as f:
-            json.dump(frontend_payload, f, indent=2, default=str)
-            
+            json.dump(frontend_json, f, indent=2, default=str)
+
+        # Return path to saved file
         return str(json_path)
 
     # --- Chart Data Extractors (Frontend ready) ---
@@ -807,17 +900,8 @@ class EDAAgent:
             (path / filename).write_text(payload, encoding="utf-8")
 
 
-from typing import Dict, Any
-import pandas as pd
-import numpy as np
-
-
 class TargetInferenceAgent:
-    """
-    Infers the most likely target column using structural, semantic,
-    distributional, and dataset-level heuristics.
-    """
-
+    
     ID_KEYWORDS = {"id", "uuid", "vin", "index", "code"}
     POSITIVE_KEYWORDS = {
         "target", "label", "price", "score",
@@ -829,13 +913,6 @@ class TargetInferenceAgent:
         self.df = self._sanitize(df.copy())
 
     def _sanitize(self, df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Clean dataset before inference.
-        Fixes:
-        - duplicated rows
-        - header rows inside data
-        - numeric type coercion
-        """
         # Drop duplicate rows
         df = df.drop_duplicates()
         # Remove rows identical to header

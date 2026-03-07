@@ -3803,3 +3803,120 @@ Feature names seen at fit time, yet now missing:
 [2026-02-28 16:06:33] [WARNING]  - Columns with > 50% missing values detected.
 [2026-02-28 16:06:33] [WARNING]  - High-cardinality categoricals detected.
 [2026-02-28 16:06:33] [WARNING]  - Target shows class imbalance (majority/minority ≥ 3).
+
+
+=== New Run — 2026-03-05 22:21:41 ===
+
+
+=== New Run — 2026-03-05 22:22:47 ===
+
+
+=== New Run — 2026-03-05 22:22:59 ===
+[2026-03-05 22:22:59] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-03-05 22:22:59] [INFO] [EDA Agent] RAW analysis complete. Found 3 warnings.
+[2026-03-05 22:22:59] [WARNING]  - Columns with > 50% missing values detected.
+[2026-03-05 22:22:59] [WARNING]  - High-cardinality categoricals detected.
+[2026-03-05 22:22:59] [WARNING]  - Target shows class imbalance (majority/minority ≥ 3).
+[2026-03-05 22:22:59] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+
+
+=== New Run — 2026-03-05 22:24:39 ===
+[2026-03-05 22:24:39] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-03-05 22:24:39] [INFO] [EDA Agent] RAW analysis complete. Found 3 warnings.
+[2026-03-05 22:24:39] [WARNING]  - Columns with > 50% missing values detected.
+[2026-03-05 22:24:39] [WARNING]  - High-cardinality categoricals detected.
+[2026-03-05 22:24:39] [WARNING]  - Target shows class imbalance (majority/minority ≥ 3).
+[2026-03-05 22:24:39] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+
+
+=== New Run — 2026-03-05 22:25:06 ===
+[2026-03-05 22:25:06] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-03-05 22:25:06] [INFO] [EDA Agent] RAW analysis complete. Found 3 warnings.
+[2026-03-05 22:25:06] [WARNING]  - Columns with > 50% missing values detected.
+[2026-03-05 22:25:06] [WARNING]  - High-cardinality categoricals detected.
+[2026-03-05 22:25:06] [WARNING]  - Target shows class imbalance (majority/minority ≥ 3).
+[2026-03-05 22:25:06] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+
+
+=== New Run — 2026-03-05 22:53:58 ===
+[2026-03-05 22:53:58] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-03-05 22:53:58] [INFO] [EDA Agent] RAW analysis complete. Found 3 warnings.
+[2026-03-05 22:53:58] [WARNING]  - Columns with > 50% missing values detected.
+[2026-03-05 22:53:58] [WARNING]  - High-cardinality categoricals detected.
+[2026-03-05 22:53:58] [WARNING]  - Target shows class imbalance (majority/minority ≥ 3).
+[2026-03-05 22:53:58] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+
+
+=== New Run — 2026-03-05 22:55:46 ===
+[2026-03-05 22:55:46] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-03-05 22:55:47] [INFO] [EDA Agent] RAW analysis complete. Found 3 warnings.
+[2026-03-05 22:55:47] [WARNING]  - Columns with > 50% missing values detected.
+[2026-03-05 22:55:47] [WARNING]  - High-cardinality categoricals detected.
+[2026-03-05 22:55:47] [WARNING]  - Target shows class imbalance (majority/minority ≥ 3).
+[2026-03-05 22:55:47] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+
+
+=== New Run — 2026-03-05 22:56:59 ===
+[2026-03-05 22:56:59] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-03-05 22:56:59] [INFO] [EDA Agent] RAW analysis complete. Found 3 warnings.
+[2026-03-05 22:56:59] [WARNING]  - Columns with > 50% missing values detected.
+[2026-03-05 22:56:59] [WARNING]  - High-cardinality categoricals detected.
+[2026-03-05 22:56:59] [WARNING]  - Target shows class imbalance (majority/minority ≥ 3).
+[2026-03-05 22:56:59] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+
+
+=== New Run — 2026-03-05 22:59:34 ===
+[2026-03-05 22:59:34] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-03-05 22:59:34] [INFO] [EDA Agent] RAW analysis complete. Found 3 warnings.
+[2026-03-05 22:59:34] [WARNING]  - Columns with > 50% missing values detected.
+[2026-03-05 22:59:34] [WARNING]  - High-cardinality categoricals detected.
+[2026-03-05 22:59:34] [WARNING]  - Target shows class imbalance (majority/minority ≥ 3).
+[2026-03-05 22:59:34] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+
+
+=== New Run — 2026-03-05 23:00:36 ===
+[2026-03-05 23:00:36] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-03-05 23:00:36] [INFO] [EDA Agent] RAW analysis complete. Found 3 warnings.
+[2026-03-05 23:00:36] [WARNING]  - Columns with > 50% missing values detected.
+[2026-03-05 23:00:36] [WARNING]  - High-cardinality categoricals detected.
+[2026-03-05 23:00:36] [WARNING]  - Target shows class imbalance (majority/minority ≥ 3).
+[2026-03-05 23:00:36] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+
+
+=== New Run — 2026-03-05 23:02:32 ===
+[2026-03-05 23:02:32] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-03-05 23:02:32] [INFO] [EDA Agent] RAW analysis complete. Found 3 warnings.
+[2026-03-05 23:02:32] [WARNING]  - Columns with > 50% missing values detected.
+[2026-03-05 23:02:32] [WARNING]  - High-cardinality categoricals detected.
+[2026-03-05 23:02:32] [WARNING]  - Target shows class imbalance (majority/minority ≥ 3).
+[2026-03-05 23:02:32] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+
+
+=== New Run — 2026-03-05 23:03:09 ===
+[2026-03-05 23:03:09] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-03-05 23:03:09] [INFO] [EDA Agent] RAW analysis complete. Found 3 warnings.
+[2026-03-05 23:03:09] [WARNING]  - Columns with > 50% missing values detected.
+[2026-03-05 23:03:09] [WARNING]  - High-cardinality categoricals detected.
+[2026-03-05 23:03:09] [WARNING]  - Target shows class imbalance (majority/minority ≥ 3).
+[2026-03-05 23:03:09] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+
+
+=== New Run — 2026-03-05 23:10:22 ===
+[2026-03-05 23:10:22] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-03-05 23:10:22] [INFO] [EDA Agent] RAW analysis complete. Found 1 warnings.
+[2026-03-05 23:10:22] [WARNING]  - Columns with > 50% missing values detected.
+[2026-03-05 23:10:22] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+
+
+=== New Run — 2026-03-05 23:12:33 ===
+[2026-03-05 23:12:33] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-03-05 23:12:33] [INFO] [EDA Agent] RAW analysis complete. Found 1 warnings.
+[2026-03-05 23:12:33] [WARNING]  - Columns with > 50% missing values detected.
+[2026-03-05 23:12:33] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+
+
+=== New Run — 2026-03-05 23:12:47 ===
+[2026-03-05 23:12:47] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-03-05 23:12:47] [INFO] [EDA Agent] RAW analysis complete. Found 1 warnings.
+[2026-03-05 23:12:47] [WARNING]  - Columns with > 50% missing values detected.
+[2026-03-05 23:12:47] [INFO] [EDA Agent] Exporting artifacts for raw stage...
