@@ -4257,6 +4257,7 @@ ValueError: Input y contains NaN.
 
 
 
+<<<<<<< HEAD
 === New Run — 2026-02-28 15:27:56 ===
 
 
@@ -4355,10 +4356,75 @@ Traceback (most recent call last):
   File "D:\Codes\GP\GP code\agents\automl_agent\automl_agent.py", line 750, in _train_with_autogluon
     base_dir = Path(self.dataset_path).resolve().parent
 AttributeError: 'AutoMLAgent' object has no attribute 'dataset_path'
+=======
+=== New Run — 2026-02-28 16:09:04 ===
+
+
+=== New Run — 2026-02-28 16:09:06 ===
+[2026-02-28 16:09:06] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-28 16:09:06] [INFO] [EDA Agent] RAW analysis complete. Found 1 warnings.
+[2026-02-28 16:09:06] [WARNING]  - Target shows class imbalance (majority/minority ≥ 3).
+[2026-02-28 16:09:06] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-02-28 16:09:07] [INFO] [EDA Agent] Starting CLEAN data analysis...
+[2026-02-28 16:09:08] [INFO] [EDA Agent] CLEAN analysis complete. Found 3 warnings.
+[2026-02-28 16:09:08] [WARNING]  - Numeric columns with > 5 % outliers (IQR).
+[2026-02-28 16:09:08] [WARNING]  - Non-normal numeric columns (Shapiro-Wilk).
+[2026-02-28 16:09:08] [WARNING]  - Target shows class imbalance (majority/minority ≥ 3).
+[2026-02-28 16:09:08] [INFO] [EDA Agent] Exporting artifacts for clean stage...
+[2026-02-28 16:09:08] [INFO] [EDA Agent] Generating Meaningful JSON directives for AutoML Agent...
+[2026-02-28 16:09:08] [INFO] [EDA Agent] AutoML context saved to Output/clean.
+[2026-02-28 16:09:08] [INFO] Starting AutoML agent workflow
+[2026-02-28 16:09:08] [INFO] Loading data from: Output/Preprocessing/full_preprocessed.csv
+[2026-02-28 16:09:08] [INFO] Data loaded successfully. Shape: (41281, 58)
+[2026-02-28 16:09:08] [INFO] Identifying target column
+[2026-02-28 16:09:08] [INFO] Target column identified: median_house_value, Problem type: classification
+[2026-02-28 16:09:08] [INFO] [Model Selection Agent] Starting selection using external directives
+[2026-02-28 16:09:15] [INFO] [Training Agent] Executing AutoGluon training strategy
+[2026-02-28 16:09:21] [INFO] [Training Agent] Running Optuna HPO to refine AutoGluon config...
+[2026-02-28 16:09:21] [INFO] [Optuna+AutoGluon] Starting 10 trials over config space
+[2026-02-28 16:09:21] [INFO] [Optuna+AutoGluon] LLM base config: {'models': ['GBM', 'XGB'], 'time_limit': 300, 'preset': 'best_quality'}
+[2026-02-28 16:09:21] [INFO] [Optuna+AutoGluon] Model subsets to explore: [['GBM'], ['XGB'], ['GBM', 'XGB']]
+[2026-02-28 16:09:21] [WARNING] [Optuna+AutoGluon] Trial 0 failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+[2026-02-28 16:09:22] [WARNING] [Optuna+AutoGluon] Trial 1 failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+[2026-02-28 16:09:22] [WARNING] [Optuna+AutoGluon] Trial 2 failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+[2026-02-28 16:09:23] [WARNING] [Optuna+AutoGluon] Trial 3 failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+[2026-02-28 16:09:23] [WARNING] [Optuna+AutoGluon] Trial 4 failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+[2026-02-28 16:09:24] [WARNING] [Optuna+AutoGluon] Trial 5 failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+[2026-02-28 16:09:25] [WARNING] [Optuna+AutoGluon] Trial 6 failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+[2026-02-28 16:09:25] [WARNING] [Optuna+AutoGluon] Trial 7 failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+[2026-02-28 16:09:26] [WARNING] [Optuna+AutoGluon] Trial 8 failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+[2026-02-28 16:09:26] [WARNING] [Optuna+AutoGluon] Trial 9 failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+[2026-02-28 16:09:26] [INFO] [Optuna+AutoGluon] Best config found: {'models': ['GBM'], 'time_limit': 270, 'preset': 'medium_quality'}
+[2026-02-28 16:09:26] [INFO] [Optuna+AutoGluon] Best score: -inf
+[2026-02-28 16:09:26] [INFO] [Training Agent] Refined config from Optuna: {'models': ['GBM'], 'time_limit': 270, 'preset': 'medium_quality'}
+[2026-02-28 16:09:26] [INFO] Initializing AutoGluon predictor with config: {'models': ['GBM'], 'time_limit': 270, 'preset': 'medium_quality'}
+[2026-02-28 16:09:26] [INFO] Mapped 'classification' to 'multiclass' (7244 classes)
+[2026-02-28 16:09:26] [INFO] Training AutoGluon with models: ['GBM'], time_limit: 270s, preset: medium_quality...
+[2026-02-28 16:09:27] [WARNING] AutoGluon training failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call., falling back to simple training...
+[2026-02-28 16:09:27] [INFO] Training simple models with Optuna HPO: ['GBM']
+[2026-02-28 16:09:27] [INFO] [Optuna] Tuning GBM ...
+[2026-02-28 16:09:27] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 16:09:27] [WARNING] Failed to tune GBM: Unknown label type: unknown. Maybe you are trying to fit a classifier, which expects discrete classes on a regression target with continuous values.
+[2026-02-28 16:09:27] [WARNING] All selected models failed — falling back to default RandomForest
+[2026-02-28 16:09:27] [ERROR] [Training Agent] Error: Unknown label type: unknown. Maybe you are trying to fit a classifier, which expects discrete classes on a regression target with continuous values.
+Traceback (most recent call last):
+  File "/Users/mohamed/Documents/GitHub/GP/agents/automl_agent/automl_agent.py", line 825, in _train_with_autogluon
+    predictor.fit(train_data, **fit_kwargs)
+  File "/Users/mohamed/Documents/GitHub/GP/automl_env_310/lib/python3.10/site-packages/autogluon/common/utils/decorators.py", line 34, in _call
+    return f(*gargs, **gkwargs)
+  File "/Users/mohamed/Documents/GitHub/GP/automl_env_310/lib/python3.10/site-packages/autogluon/tabular/predictor/predictor.py", line 1412, in fit
+    self._fit(ag_fit_kwargs=ag_fit_kwargs, ag_post_fit_kwargs=ag_post_fit_kwargs)
+  File "/Users/mohamed/Documents/GitHub/GP/automl_env_310/lib/python3.10/site-packages/autogluon/tabular/predictor/predictor.py", line 1420, in _fit
+    self._post_fit(**ag_post_fit_kwargs)
+  File "/Users/mohamed/Documents/GitHub/GP/automl_env_310/lib/python3.10/site-packages/autogluon/tabular/predictor/predictor.py", line 1768, in _post_fit
+    raise RuntimeError(
+RuntimeError: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+>>>>>>> 0d7493d9f (deleted data analyzer and autogloun with optuna)
 
 During handling of the above exception, another exception occurred:
 
 Traceback (most recent call last):
+<<<<<<< HEAD
   File "D:\Codes\GP\GP code\agents\automl_agent\automl_agent.py", line 462, in training_agent
     trained_model, metrics = self._train_with_autogluon(
   File "D:\Codes\GP\GP code\agents\automl_agent\automl_agent.py", line 871, in _train_with_autogluon
@@ -5029,3 +5095,314 @@ ValueError: Unknown label type: unknown. Maybe you are trying to fit a classifie
 [2026-03-01 01:31:07] [INFO] [Save Outputs]   markdown   → Output\automl\report_20260301_013107.md
 [2026-03-01 01:31:07] [INFO] [Save Outputs]   pickle     → Output\automl\best_model_20260301_013107.pkl
 [2026-03-01 01:31:07] [INFO] [Save Outputs] ─────────────────────────────────────
+=======
+  File "/Users/mohamed/Documents/GitHub/GP/agents/automl_agent/automl_agent.py", line 462, in training_agent
+    trained_model, metrics = self._train_with_autogluon(
+  File "/Users/mohamed/Documents/GitHub/GP/agents/automl_agent/automl_agent.py", line 863, in _train_with_autogluon
+    return self._train_simple_models(X, y, problem_type, [fallback_models[0]] if fallback_models else ['RandomForest'])
+  File "/Users/mohamed/Documents/GitHub/GP/agents/automl_agent/automl_agent.py", line 1255, in _train_simple_models
+    best_model.fit(X_train, y_train)
+  File "/Users/mohamed/Documents/GitHub/GP/automl_env_310/lib/python3.10/site-packages/sklearn/base.py", line 1365, in wrapper
+    return fit_method(estimator, *args, **kwargs)
+  File "/Users/mohamed/Documents/GitHub/GP/automl_env_310/lib/python3.10/site-packages/sklearn/ensemble/_forest.py", line 418, in fit
+    y, expanded_class_weight = self._validate_y_class_weight(y)
+  File "/Users/mohamed/Documents/GitHub/GP/automl_env_310/lib/python3.10/site-packages/sklearn/ensemble/_forest.py", line 830, in _validate_y_class_weight
+    check_classification_targets(y)
+  File "/Users/mohamed/Documents/GitHub/GP/automl_env_310/lib/python3.10/site-packages/sklearn/utils/multiclass.py", line 221, in check_classification_targets
+    raise ValueError(
+ValueError: Unknown label type: unknown. Maybe you are trying to fit a classifier, which expects discrete classes on a regression target with continuous values.
+
+[2026-02-28 16:09:27] [ERROR] Workflow completed with error: Failed to train model: Unknown label type: unknown. Maybe you are trying to fit a classifier, which expects discrete classes on a regression target with continuous values.
+[2026-02-28 16:09:27] [INFO] [Save Outputs] JSON saved → Output/automl/results_20260228_160927.json
+[2026-02-28 16:09:27] [INFO] [Save Outputs] Markdown saved → Output/automl/report_20260228_160927.md
+[2026-02-28 16:09:27] [WARNING] [Save Outputs] No trained model found in state — skipping pickle.
+[2026-02-28 16:09:27] [INFO] [Save Outputs] ── Saved files ──────────────────────
+[2026-02-28 16:09:27] [INFO] [Save Outputs]   json       → Output/automl/results_20260228_160927.json
+[2026-02-28 16:09:27] [INFO] [Save Outputs]   markdown   → Output/automl/report_20260228_160927.md
+[2026-02-28 16:09:27] [INFO] [Save Outputs] ─────────────────────────────────────
+
+
+=== New Run — 2026-02-28 16:13:15 ===
+
+
+=== New Run — 2026-02-28 16:13:17 ===
+[2026-02-28 16:13:17] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-28 16:13:17] [INFO] [EDA Agent] RAW analysis complete. Found 1 warnings.
+[2026-02-28 16:13:17] [WARNING]  - Target shows class imbalance (majority/minority ≥ 3).
+[2026-02-28 16:13:17] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-02-28 16:13:18] [INFO] [EDA Agent] Starting CLEAN data analysis...
+[2026-02-28 16:13:19] [INFO] [EDA Agent] CLEAN analysis complete. Found 3 warnings.
+[2026-02-28 16:13:19] [WARNING]  - Numeric columns with > 5 % outliers (IQR).
+[2026-02-28 16:13:19] [WARNING]  - Non-normal numeric columns (Shapiro-Wilk).
+[2026-02-28 16:13:19] [WARNING]  - Target shows class imbalance (majority/minority ≥ 3).
+[2026-02-28 16:13:19] [INFO] [EDA Agent] Exporting artifacts for clean stage...
+[2026-02-28 16:13:19] [INFO] [EDA Agent] Generating Meaningful JSON directives for AutoML Agent...
+[2026-02-28 16:13:19] [INFO] [EDA Agent] AutoML context saved to Output/clean.
+[2026-02-28 16:13:20] [INFO] Starting AutoML agent workflow
+[2026-02-28 16:13:20] [INFO] Loading data from: Output/Preprocessing/full_preprocessed.csv
+[2026-02-28 16:13:20] [INFO] Data loaded successfully. Shape: (41281, 58)
+[2026-02-28 16:13:20] [INFO] Identifying target column
+[2026-02-28 16:13:20] [INFO] Problem type pre-set by orchestrator: regression
+[2026-02-28 16:13:20] [INFO] Target column: median_house_value, Problem type: regression
+[2026-02-28 16:13:20] [INFO] [Model Selection Agent] Starting selection using external directives
+[2026-02-28 16:13:26] [INFO] [Training Agent] Executing AutoGluon training strategy
+[2026-02-28 16:13:34] [INFO] [Training Agent] Running Optuna HPO to refine AutoGluon config...
+[2026-02-28 16:13:34] [INFO] [Optuna+AutoGluon] Starting 10 trials over config space
+[2026-02-28 16:13:34] [INFO] [Optuna+AutoGluon] LLM base config: {'models': ['GBM', 'XGB'], 'time_limit': 300, 'preset': 'best_quality'}
+[2026-02-28 16:13:34] [INFO] [Optuna+AutoGluon] Model subsets to explore: [['GBM'], ['XGB'], ['GBM', 'XGB']]
+[2026-02-28 16:13:34] [WARNING] [Optuna+AutoGluon] Trial 0 failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+[2026-02-28 16:13:43] [WARNING] [Optuna+AutoGluon] Trial 1 failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+[2026-02-28 16:13:43] [WARNING] [Optuna+AutoGluon] Trial 2 failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+[2026-02-28 16:13:43] [WARNING] [Optuna+AutoGluon] Trial 3 failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+[2026-02-28 16:13:52] [WARNING] [Optuna+AutoGluon] Trial 4 failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+[2026-02-28 16:13:52] [WARNING] [Optuna+AutoGluon] Trial 5 failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+[2026-02-28 16:14:01] [WARNING] [Optuna+AutoGluon] Trial 6 failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+[2026-02-28 16:14:09] [WARNING] [Optuna+AutoGluon] Trial 7 failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+[2026-02-28 16:14:10] [WARNING] [Optuna+AutoGluon] Trial 8 failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+[2026-02-28 16:14:10] [WARNING] [Optuna+AutoGluon] Trial 9 failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+[2026-02-28 16:14:10] [INFO] [Optuna+AutoGluon] Best config found: {'models': ['GBM'], 'time_limit': 270, 'preset': 'medium_quality'}
+[2026-02-28 16:14:10] [INFO] [Optuna+AutoGluon] Best score: -inf
+[2026-02-28 16:14:10] [INFO] [Training Agent] Refined config from Optuna: {'models': ['GBM'], 'time_limit': 270, 'preset': 'medium_quality'}
+[2026-02-28 16:14:10] [INFO] Initializing AutoGluon predictor with config: {'models': ['GBM'], 'time_limit': 270, 'preset': 'medium_quality'}
+[2026-02-28 16:14:10] [INFO] Training AutoGluon with models: ['GBM'], time_limit: 270s, preset: medium_quality...
+[2026-02-28 16:14:10] [WARNING] AutoGluon training failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call., falling back to simple training...
+[2026-02-28 16:14:10] [INFO] Training simple models with Optuna HPO: ['GBM']
+[2026-02-28 16:14:10] [INFO] [Optuna] Tuning GBM ...
+[2026-02-28 16:14:10] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 16:14:12] [WARNING] Failed to tune GBM: could not convert string to float: 'median_house_value'
+[2026-02-28 16:14:12] [WARNING] All selected models failed — falling back to default RandomForest
+[2026-02-28 16:14:19] [ERROR] [Training Agent] Error: could not convert string to float: 'median_house_value'
+Traceback (most recent call last):
+  File "/Users/mohamed/Documents/GitHub/GP/agents/automl_agent/automl_agent.py", line 830, in _train_with_autogluon
+    predictor.fit(train_data, **fit_kwargs)
+  File "/Users/mohamed/Documents/GitHub/GP/automl_env_310/lib/python3.10/site-packages/autogluon/common/utils/decorators.py", line 34, in _call
+    return f(*gargs, **gkwargs)
+  File "/Users/mohamed/Documents/GitHub/GP/automl_env_310/lib/python3.10/site-packages/autogluon/tabular/predictor/predictor.py", line 1412, in fit
+    self._fit(ag_fit_kwargs=ag_fit_kwargs, ag_post_fit_kwargs=ag_post_fit_kwargs)
+  File "/Users/mohamed/Documents/GitHub/GP/automl_env_310/lib/python3.10/site-packages/autogluon/tabular/predictor/predictor.py", line 1420, in _fit
+    self._post_fit(**ag_post_fit_kwargs)
+  File "/Users/mohamed/Documents/GitHub/GP/automl_env_310/lib/python3.10/site-packages/autogluon/tabular/predictor/predictor.py", line 1768, in _post_fit
+    raise RuntimeError(
+RuntimeError: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/mohamed/Documents/GitHub/GP/agents/automl_agent/automl_agent.py", line 467, in training_agent
+    trained_model, metrics = self._train_with_autogluon(
+  File "/Users/mohamed/Documents/GitHub/GP/agents/automl_agent/automl_agent.py", line 868, in _train_with_autogluon
+    return self._train_simple_models(X, y, problem_type, [fallback_models[0]] if fallback_models else ['RandomForest'])
+  File "/Users/mohamed/Documents/GitHub/GP/agents/automl_agent/automl_agent.py", line 1261, in _train_simple_models
+    best_score  = best_model.score(X_test, y_test)
+  File "/Users/mohamed/Documents/GitHub/GP/automl_env_310/lib/python3.10/site-packages/sklearn/base.py", line 639, in score
+    return r2_score(y, y_pred, sample_weight=sample_weight)
+  File "/Users/mohamed/Documents/GitHub/GP/automl_env_310/lib/python3.10/site-packages/sklearn/utils/_param_validation.py", line 218, in wrapper
+    return func(*args, **kwargs)
+  File "/Users/mohamed/Documents/GitHub/GP/automl_env_310/lib/python3.10/site-packages/sklearn/metrics/_regression.py", line 1276, in r2_score
+    _check_reg_targets_with_floating_dtype(
+  File "/Users/mohamed/Documents/GitHub/GP/automl_env_310/lib/python3.10/site-packages/sklearn/metrics/_regression.py", line 209, in _check_reg_targets_with_floating_dtype
+    y_type, y_true, y_pred, sample_weight, multioutput = _check_reg_targets(
+  File "/Users/mohamed/Documents/GitHub/GP/automl_env_310/lib/python3.10/site-packages/sklearn/metrics/_regression.py", line 115, in _check_reg_targets
+    y_true = check_array(y_true, ensure_2d=False, dtype=dtype)
+  File "/Users/mohamed/Documents/GitHub/GP/automl_env_310/lib/python3.10/site-packages/sklearn/utils/validation.py", line 1053, in check_array
+    array = _asarray_with_order(array, order=order, dtype=dtype, xp=xp)
+  File "/Users/mohamed/Documents/GitHub/GP/automl_env_310/lib/python3.10/site-packages/sklearn/utils/_array_api.py", line 757, in _asarray_with_order
+    array = numpy.asarray(array, order=order, dtype=dtype)
+  File "/Users/mohamed/Documents/GitHub/GP/automl_env_310/lib/python3.10/site-packages/pandas/core/series.py", line 1036, in __array__
+    arr = np.asarray(values, dtype=dtype)
+ValueError: could not convert string to float: 'median_house_value'
+
+[2026-02-28 16:14:19] [ERROR] Workflow completed with error: Failed to train model: could not convert string to float: 'median_house_value'
+[2026-02-28 16:14:19] [INFO] [Save Outputs] JSON saved → Output/automl/results_20260228_161419.json
+[2026-02-28 16:14:19] [INFO] [Save Outputs] Markdown saved → Output/automl/report_20260228_161419.md
+[2026-02-28 16:14:19] [WARNING] [Save Outputs] No trained model found in state — skipping pickle.
+[2026-02-28 16:14:19] [INFO] [Save Outputs] ── Saved files ──────────────────────
+[2026-02-28 16:14:19] [INFO] [Save Outputs]   json       → Output/automl/results_20260228_161419.json
+[2026-02-28 16:14:19] [INFO] [Save Outputs]   markdown   → Output/automl/report_20260228_161419.md
+[2026-02-28 16:14:19] [INFO] [Save Outputs] ─────────────────────────────────────
+
+
+=== New Run — 2026-02-28 16:23:26 ===
+
+
+=== New Run — 2026-02-28 16:23:26 ===
+[2026-02-28 16:23:26] [INFO] Starting AutoML agent workflow
+[2026-02-28 16:23:26] [INFO] Loading data from: /Users/mohamed/Documents/GitHub/GP/assets/data/Datasets/Classification Datasets/Titanic-Dataset.csv
+[2026-02-28 16:23:26] [INFO] Data loaded successfully. Shape: (1783, 12)
+[2026-02-28 16:23:26] [INFO] Identifying target column
+[2026-02-28 16:23:26] [INFO] Problem type auto-detected: classification
+[2026-02-28 16:23:26] [INFO] Target column: Survived, Problem type: classification
+[2026-02-28 16:23:26] [INFO] [Model Selection Agent] Starting selection using external directives
+[2026-02-28 16:23:26] [ERROR] [Model Selection Agent] Error: 'NoneType' object has no attribute 'get'
+[2026-02-28 16:23:26] [INFO] [Training Agent] Executing simple training strategy
+[2026-02-28 16:23:27] [INFO] Training simple models with Optuna HPO: ['RandomForest']
+[2026-02-28 16:23:27] [INFO] [Optuna] Tuning RandomForest ...
+[2026-02-28 16:23:34] [INFO] [Optuna] RandomForest → best params: {'n_estimators': 210, 'max_depth': 8, 'min_samples_split': 12, 'min_samples_leaf': 2, 'max_features': None}
+[2026-02-28 16:23:34] [INFO] [Optuna] RandomForest → accuracy: 0.8566
+[2026-02-28 16:23:34] [INFO] Best model: RandomForest with accuracy: 0.8566
+[2026-02-28 16:23:34] [INFO] [Training Agent] Confusion Matrix generated: [[210, 15], [46, 86]]
+[2026-02-28 16:23:37] [INFO] [Training Agent] Training complete. Score: 0.8566
+[2026-02-28 16:23:37] [ERROR] Workflow completed with error: Failed in model selection: 'NoneType' object has no attribute 'get'
+[2026-02-28 16:23:37] [INFO] [Save Outputs] JSON saved → Output/test_runs/results_20260228_162337.json
+[2026-02-28 16:23:37] [INFO] [Save Outputs] Markdown saved → Output/test_runs/report_20260228_162337.md
+[2026-02-28 16:23:37] [INFO] [Save Outputs] Sklearn model pickled → Output/test_runs/best_model_20260228_162337.pkl
+[2026-02-28 16:23:37] [INFO] [Save Outputs] ── Saved files ──────────────────────
+[2026-02-28 16:23:37] [INFO] [Save Outputs]   json       → Output/test_runs/results_20260228_162337.json
+[2026-02-28 16:23:37] [INFO] [Save Outputs]   markdown   → Output/test_runs/report_20260228_162337.md
+[2026-02-28 16:23:37] [INFO] [Save Outputs]   pickle     → Output/test_runs/best_model_20260228_162337.pkl
+[2026-02-28 16:23:37] [INFO] [Save Outputs] ─────────────────────────────────────
+
+
+=== New Run — 2026-02-28 16:25:11 ===
+
+
+=== New Run — 2026-02-28 16:25:13 ===
+[2026-02-28 16:25:13] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-28 16:25:13] [INFO] [EDA Agent] RAW analysis complete. Found 1 warnings.
+[2026-02-28 16:25:13] [WARNING]  - Target shows class imbalance (majority/minority ≥ 3).
+[2026-02-28 16:25:13] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-02-28 16:25:14] [INFO] [EDA Agent] Starting CLEAN data analysis...
+[2026-02-28 16:25:14] [INFO] [EDA Agent] CLEAN analysis complete. Found 3 warnings.
+[2026-02-28 16:25:14] [WARNING]  - Numeric columns with > 5 % outliers (IQR).
+[2026-02-28 16:25:14] [WARNING]  - Non-normal numeric columns (Shapiro-Wilk).
+[2026-02-28 16:25:14] [WARNING]  - Target shows class imbalance (majority/minority ≥ 3).
+[2026-02-28 16:25:14] [INFO] [EDA Agent] Exporting artifacts for clean stage...
+[2026-02-28 16:25:14] [INFO] [EDA Agent] Generating Meaningful JSON directives for AutoML Agent...
+[2026-02-28 16:25:15] [INFO] [EDA Agent] AutoML context saved to Output/clean.
+[2026-02-28 16:25:15] [INFO] Starting AutoML agent workflow
+[2026-02-28 16:25:15] [INFO] Loading data from: Output/Preprocessing/full_preprocessed.csv
+[2026-02-28 16:25:15] [INFO] Data loaded successfully. Shape: (41281, 58)
+[2026-02-28 16:25:15] [INFO] Identifying target column
+[2026-02-28 16:25:15] [INFO] Problem type pre-set by orchestrator: regression
+[2026-02-28 16:25:15] [INFO] Target column: median_house_value, Problem type: regression
+[2026-02-28 16:25:15] [INFO] [Model Selection Agent] Starting selection using external directives
+[2026-02-28 16:25:22] [INFO] [Training Agent] Executing AutoGluon training strategy
+[2026-02-28 16:25:27] [INFO] [Training Agent] Running Optuna HPO to refine AutoGluon config...
+[2026-02-28 16:25:27] [INFO] [Optuna+AutoGluon] Starting 10 trials over config space
+[2026-02-28 16:25:27] [INFO] [Optuna+AutoGluon] LLM base config: {'models': ['GBM', 'XGB'], 'time_limit': 300, 'preset': 'best_quality'}
+[2026-02-28 16:25:27] [INFO] [Optuna+AutoGluon] Model subsets to explore: [['GBM'], ['XGB'], ['GBM', 'XGB']]
+[2026-02-28 16:25:27] [WARNING] [Optuna+AutoGluon] Trial 0 failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+[2026-02-28 16:25:36] [WARNING] [Optuna+AutoGluon] Trial 1 failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+[2026-02-28 16:25:36] [WARNING] [Optuna+AutoGluon] Trial 2 failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+[2026-02-28 16:25:36] [WARNING] [Optuna+AutoGluon] Trial 3 failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+[2026-02-28 16:25:46] [WARNING] [Optuna+AutoGluon] Trial 4 failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+[2026-02-28 16:25:46] [WARNING] [Optuna+AutoGluon] Trial 5 failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+[2026-02-28 16:25:56] [WARNING] [Optuna+AutoGluon] Trial 6 failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+[2026-02-28 16:26:05] [WARNING] [Optuna+AutoGluon] Trial 7 failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+[2026-02-28 16:26:06] [WARNING] [Optuna+AutoGluon] Trial 8 failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+[2026-02-28 16:26:06] [WARNING] [Optuna+AutoGluon] Trial 9 failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call.
+[2026-02-28 16:26:06] [INFO] [Optuna+AutoGluon] Best config found: {'models': ['GBM'], 'time_limit': 270, 'preset': 'medium_quality'}
+[2026-02-28 16:26:06] [INFO] [Optuna+AutoGluon] Best score: -inf
+[2026-02-28 16:26:06] [INFO] [Training Agent] Refined config from Optuna: {'models': ['GBM'], 'time_limit': 270, 'preset': 'medium_quality'}
+[2026-02-28 16:26:06] [INFO] Initializing AutoGluon predictor with config: {'models': ['GBM'], 'time_limit': 270, 'preset': 'medium_quality'}
+[2026-02-28 16:26:06] [INFO] Training AutoGluon with models: ['GBM'], time_limit: 270s, preset: medium_quality...
+
+
+=== New Run — 2026-02-28 16:26:08 ===
+
+
+=== New Run — 2026-02-28 16:26:09 ===
+[2026-02-28 16:26:09] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-28 16:26:09] [INFO] [EDA Agent] RAW analysis complete. Found 3 warnings.
+[2026-02-28 16:26:09] [WARNING]  - Columns with > 50% missing values detected.
+[2026-02-28 16:26:09] [WARNING]  - High-cardinality categoricals detected.
+[2026-02-28 16:26:09] [WARNING]  - Target shows class imbalance (majority/minority ≥ 3).
+[2026-02-28 16:26:09] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-02-28 16:26:09] [INFO] [EDA Agent] Starting CLEAN data analysis...
+[2026-02-28 16:26:09] [INFO] [EDA Agent] CLEAN analysis complete. Found 3 warnings.
+[2026-02-28 16:26:09] [WARNING]  - Numeric columns with > 5 % outliers (IQR).
+[2026-02-28 16:26:09] [WARNING]  - Non-normal numeric columns (Shapiro-Wilk).
+[2026-02-28 16:26:09] [WARNING]  - Target shows class imbalance (majority/minority ≥ 3).
+[2026-02-28 16:26:09] [INFO] [EDA Agent] Exporting artifacts for clean stage...
+[2026-02-28 16:26:09] [INFO] [EDA Agent] Generating Meaningful JSON directives for AutoML Agent...
+[2026-02-28 16:26:09] [INFO] [EDA Agent] AutoML context saved to Output/clean.
+[2026-02-28 16:26:09] [INFO] Starting AutoML agent workflow
+[2026-02-28 16:26:09] [INFO] Loading data from: Output/Preprocessing/full_preprocessed.csv
+[2026-02-28 16:26:09] [INFO] Data loaded successfully. Shape: (1783, 22)
+[2026-02-28 16:26:09] [INFO] Identifying target column
+[2026-02-28 16:26:09] [INFO] Problem type pre-set by orchestrator: classification
+[2026-02-28 16:26:09] [INFO] Target column: Survived, Problem type: classification
+[2026-02-28 16:26:09] [INFO] [Model Selection Agent] Starting selection using external directives
+[2026-02-28 16:26:16] [INFO] [Training Agent] Executing AutoGluon training strategy
+[2026-02-28 16:26:22] [INFO] [Training Agent] Running Optuna HPO to refine AutoGluon config...
+[2026-02-28 16:26:22] [INFO] [Optuna+AutoGluon] Starting 10 trials over config space
+[2026-02-28 16:26:22] [INFO] [Optuna+AutoGluon] LLM base config: {'models': ['GBM', 'XGB'], 'time_limit': 300, 'preset': 'best_quality'}
+[2026-02-28 16:26:22] [INFO] [Optuna+AutoGluon] Model subsets to explore: [['GBM'], ['XGB'], ['GBM', 'XGB']]
+[2026-02-28 16:26:26] [INFO] [Optuna+AutoGluon] Trial 0: preset=medium_quality, time=270s, models=['GBM'] → score=0.8811
+[2026-02-28 16:27:08] [INFO] [Optuna+AutoGluon] Trial 1: preset=high_quality, time=180s, models=['GBM', 'XGB'] → score=0.8986
+[2026-02-28 16:27:12] [INFO] [Optuna+AutoGluon] Trial 2: preset=medium_quality, time=150s, models=['GBM'] → score=0.8811
+[2026-02-28 16:27:51] [INFO] [Optuna+AutoGluon] Trial 3: preset=high_quality, time=210s, models=['GBM'] → score=0.8671
+[2026-02-28 16:27:55] [INFO] [Optuna+AutoGluon] Trial 4: preset=best_quality, time=330s, models=['XGB'] → score=0.8741
+[2026-02-28 16:28:31] [INFO] [Optuna+AutoGluon] Trial 5: preset=best_quality, time=390s, models=['GBM'] → score=0.8951
+[2026-02-28 16:29:11] [INFO] [Optuna+AutoGluon] Trial 6: preset=best_quality, time=330s, models=['GBM', 'XGB'] → score=0.8916
+[2026-02-28 16:29:15] [INFO] [Optuna+AutoGluon] Trial 7: preset=best_quality, time=390s, models=['XGB'] → score=0.8741
+[2026-02-28 16:29:51] [INFO] [Optuna+AutoGluon] Trial 8: preset=best_quality, time=180s, models=['GBM'] → score=0.8951
+[2026-02-28 16:30:28] [INFO] [Optuna+AutoGluon] Trial 9: preset=best_quality, time=360s, models=['GBM'] → score=0.8951
+[2026-02-28 16:30:28] [INFO] [Optuna+AutoGluon] Best config found: {'models': ['GBM', 'XGB'], 'time_limit': 180, 'preset': 'high_quality'}
+[2026-02-28 16:30:28] [INFO] [Optuna+AutoGluon] Best score: 0.8986
+[2026-02-28 16:30:28] [INFO] [Training Agent] Refined config from Optuna: {'models': ['GBM', 'XGB'], 'time_limit': 180, 'preset': 'high_quality'}
+[2026-02-28 16:30:28] [INFO] Initializing AutoGluon predictor with config: {'models': ['GBM', 'XGB'], 'time_limit': 180, 'preset': 'high_quality'}
+[2026-02-28 16:30:28] [INFO] Mapped 'classification' to 'multiclass' (3 classes)
+[2026-02-28 16:30:28] [INFO] Training AutoGluon with models: ['GBM', 'XGB'], time_limit: 180s, preset: high_quality...
+[2026-02-28 16:30:28] [WARNING] Unknown model 'XGB' - skipping. Valid AutoGluon models: ['GBM', 'XGB', 'GBM', 'CAT', 'NN_TORCH', 'NN_TORCH', 'FASTAI', 'RF', 'RF', 'XT', 'XT', 'KNN', 'LR', 'LR', 'LR', 'LR']
+[2026-02-28 16:31:12] [INFO] AutoGluon training complete. Best model: LightGBM_BAG_L2 (score: 0.9228)
+[2026-02-28 16:31:12] [INFO] Total models trained: 8
+[2026-02-28 16:31:12] [INFO] [Training Agent] Confusion Matrix generated: [[213, 12], [18, 114]]
+[2026-02-28 16:31:16] [INFO] [Training Agent] Training complete. Score: 0.9228
+[2026-02-28 16:31:16] [INFO] Workflow completed successfully!
+[2026-02-28 16:31:16] [INFO] [Save Outputs] JSON saved → Output/automl/results_20260228_163116.json
+[2026-02-28 16:31:16] [INFO] [Save Outputs] Markdown saved → Output/automl/report_20260228_163116.md
+[2026-02-28 16:31:16] [INFO] [Save Outputs] AutoGluon predictor path pickled → Output/automl/best_model_20260228_163116.pkl
+[2026-02-28 16:31:16] [INFO] [Save Outputs] To reload: TabularPredictor.load('/Users/mohamed/Documents/GitHub/GP/Output/AutoGluonModels')
+[2026-02-28 16:31:16] [INFO] [Save Outputs] ── Saved files ──────────────────────
+[2026-02-28 16:31:16] [INFO] [Save Outputs]   json       → Output/automl/results_20260228_163116.json
+[2026-02-28 16:31:16] [INFO] [Save Outputs]   markdown   → Output/automl/report_20260228_163116.md
+[2026-02-28 16:31:16] [INFO] [Save Outputs]   pickle     → Output/automl/best_model_20260228_163116.pkl
+[2026-02-28 16:31:16] [INFO] [Save Outputs] ─────────────────────────────────────
+
+
+=== New Run — 2026-03-09 02:28:10 ===
+
+
+=== New Run — 2026-03-09 02:28:13 ===
+[2026-03-09 02:28:13] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-03-09 02:28:13] [INFO] [EDA Agent] RAW analysis complete. Found 3 warnings.
+[2026-03-09 02:28:13] [WARNING]  - Columns with > 50% missing values detected.
+[2026-03-09 02:28:13] [WARNING]  - High-cardinality categoricals detected.
+[2026-03-09 02:28:13] [WARNING]  - Target shows class imbalance (majority/minority ≥ 3).
+[2026-03-09 02:28:13] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-03-09 02:28:13] [INFO] [EDA Agent] Starting CLEAN data analysis...
+[2026-03-09 02:28:13] [INFO] [EDA Agent] CLEAN analysis complete. Found 3 warnings.
+[2026-03-09 02:28:13] [WARNING]  - Numeric columns with > 5 % outliers (IQR).
+[2026-03-09 02:28:13] [WARNING]  - Non-normal numeric columns (Shapiro-Wilk).
+[2026-03-09 02:28:13] [WARNING]  - Target shows class imbalance (majority/minority ≥ 3).
+[2026-03-09 02:28:13] [INFO] [EDA Agent] Exporting artifacts for clean stage...
+[2026-03-09 02:28:13] [INFO] [EDA Agent] Generating Meaningful JSON directives for AutoML Agent...
+[2026-03-09 02:28:13] [INFO] [EDA Agent] AutoML context saved to Output/clean.
+[2026-03-09 02:28:13] [INFO] Starting AutoML agent workflow
+[2026-03-09 02:28:13] [INFO] Loading data from: Output/Preprocessing/full_preprocessed.csv
+[2026-03-09 02:28:13] [INFO] Data loaded successfully. Shape: (1783, 22)
+[2026-03-09 02:28:13] [INFO] Identifying target column
+[2026-03-09 02:28:13] [INFO] Problem type pre-set by orchestrator: classification
+[2026-03-09 02:28:13] [INFO] Target column: Survived, Problem type: classification
+[2026-03-09 02:28:13] [INFO] [Model Selection Agent] Starting selection using external directives
+[2026-03-09 02:28:21] [INFO] [Training Agent] Executing AutoGluon training strategy
+[2026-03-09 02:28:26] [INFO] Initializing AutoGluon predictor with config: {'models': ['GBM', 'XGB'], 'time_limit': 300, 'preset': 'best_quality'}
+[2026-03-09 02:28:26] [INFO] Mapped 'classification' to 'multiclass' (3 classes)
+[2026-03-09 02:28:26] [INFO] Training AutoGluon with models: ['GBM', 'XGB'], time_limit: 300s, preset: best_quality...
+[2026-03-09 02:28:26] [WARNING] Unknown model 'XGB' - skipping. Valid AutoGluon models: ['GBM', 'XGB', 'GBM', 'CAT', 'NN_TORCH', 'NN_TORCH', 'FASTAI', 'RF', 'RF', 'XT', 'XT', 'KNN', 'LR', 'LR', 'LR', 'LR']
+[2026-03-09 02:29:09] [INFO] AutoGluon training complete. Best model: LightGBM_BAG_L2 (score: 0.9228)
+[2026-03-09 02:29:09] [INFO] Total models trained: 4
+[2026-03-09 02:29:09] [INFO] [Training Agent] Confusion Matrix generated: [[212, 13], [12, 120]]
+[2026-03-09 02:29:12] [INFO] [Training Agent] Training complete. Score: 0.9228
+[2026-03-09 02:29:12] [INFO] Workflow completed successfully!
+[2026-03-09 02:29:12] [INFO] [Save Outputs] JSON saved → Output/automl/results_20260309_022912.json
+[2026-03-09 02:29:12] [INFO] [Save Outputs] Markdown saved → Output/automl/report_20260309_022912.md
+[2026-03-09 02:29:12] [INFO] [Save Outputs] AutoGluon predictor path pickled → Output/automl/best_model_20260309_022912.pkl
+[2026-03-09 02:29:12] [INFO] [Save Outputs] To reload: TabularPredictor.load('/Users/mohamed/Documents/GitHub/GP/Output/AutoGluonModels')
+[2026-03-09 02:29:12] [INFO] [Save Outputs] ── Saved files ──────────────────────
+[2026-03-09 02:29:12] [INFO] [Save Outputs]   json       → Output/automl/results_20260309_022912.json
+[2026-03-09 02:29:12] [INFO] [Save Outputs]   markdown   → Output/automl/report_20260309_022912.md
+[2026-03-09 02:29:12] [INFO] [Save Outputs]   pickle     → Output/automl/best_model_20260309_022912.pkl
+[2026-03-09 02:29:12] [INFO] [Save Outputs] ─────────────────────────────────────
+>>>>>>> 0d7493d9f (deleted data analyzer and autogloun with optuna)

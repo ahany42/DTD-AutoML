@@ -546,6 +546,7 @@
     },
     "target_analysis": {
       "column": "Survived",
+<<<<<<< HEAD
       "dtype": "float64",
       "task_type": "classification",
       "n_classes": 2,
@@ -562,6 +563,25 @@
       "min_samples_per_class": 684,
       "requires_stratification": true,
       "rare_class_risk": false
+=======
+      "dtype": "object",
+      "task_type": "classification",
+      "n_classes": 3,
+      "is_binary": false,
+      "class_distribution": {
+        "0": 0.6158,
+        "1": 0.3836,
+        "Survived": 0.0006
+      },
+      "minority_class_ratio": 0.0006,
+      "majority_class_ratio": 0.6158,
+      "imbalance_ratio": 1098.0,
+      "imbalance_severity": "severe",
+      "target_entropy": 0.967,
+      "min_samples_per_class": 1,
+      "requires_stratification": true,
+      "rare_class_risk": true
+>>>>>>> 0d7493d9f (deleted data analyzer and autogloun with optuna)
     },
     "data_quality_report": {
       "missing_values": {
@@ -752,6 +772,11 @@
           "Embarked"
         ],
         "message": "Non-normal numeric columns (Shapiro-Wilk)."
+      },
+      {
+        "type": "class_imbalance",
+        "imbalance_ratio": 1098.0,
+        "message": "Target shows class imbalance (majority/minority \u2265 3)."
       }
     ],
     "total_feature_count": 21,

@@ -1,5 +1,9 @@
 {
+<<<<<<< HEAD
   "dataset": "1772321330530.csv",
+=======
+  "dataset": "Titanic-Dataset.csv",
+>>>>>>> 0d7493d9f (deleted data analyzer and autogloun with optuna)
   "target_column": "Survived",
   "rows": 1782,
   "features": 21,
