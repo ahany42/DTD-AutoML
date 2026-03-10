@@ -8,9 +8,11 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 import os
+import sys
 import time
 from dotenv import load_dotenv
 
+import dask.dataframe as dd
 
 from src.utils.logger import Logger
 # Load environment variables
@@ -98,17 +100,24 @@ class AutoMLAgent:
             logger.info(f"Loading data from: {state['data_path']}")
             data_path = str(state['data_path'])
             if data_path.endswith('.csv'):
-                data = pd.read_csv(data_path)
+                self.data = dd.read_csv(
+                                data_path,
+                                blocksize="256MB",
+                                assume_missing=True,
+                                dtype=str,
+                                sample=256000
+                            )
             elif data_path.endswith('.xlsx') or data_path.endswith('.xls'):
-                data = pd.read_excel(data_path)
+                pdf = pd.read_excel(data_path)
+                self.data = dd.from_pandas(pdf, npartitions=4)
             elif data_path.endswith('.json'):
-                data = pd.read_json(data_path)
+                self.data = dd.read_json(data_path, blocksize="256MB", lines=True)
             else:
-                data = pd.read_csv(data_path)
+                raise ValueError(f"Unsupported file format")
             
-            state['data'] = data
+            state['data'] = self.data
             state['step'] = 'data_loaded'
-            logger.info(f"Data loaded successfully. Shape: {data.shape}")
+            logger.info(f"Data loaded successfully. Shape: {len(self.data.columns)}")
             
         except Exception as e:
             logger.error(f"Error loading data: {str(e)}", e)
@@ -247,7 +256,7 @@ class AutoMLAgent:
         
     #     return state
     
-    def model_selection_agent(self, state: AgentState) -> AgentState:
+    def model_selection_agent(self,data_summary: dict, state: AgentState) -> AgentState:
         """
         Model Selection Subagent that depends on external Analysis Agent directives.
         """
@@ -316,6 +325,20 @@ class AutoMLAgent:
             state['selected_models'] = selected_models
             state['step'] = 'models_selected'
             
+                        # Large-scale safeguard
+            if use_automl and data_summary['data_info']['rows'] > 1_000_000:
+                automl_config['models_to_prioritize'] = \
+                    automl_config.get('models_to_prioritize', ['GBM', 'XGB'])[:2]
+                
+                automl_config['preset_mode'] = 'good_quality_faster_inference'
+                
+                automl_config['time_limit_seconds'] = \
+                    min(automl_config.get('time_limit_seconds', 300), 600)
+
+                state['automl_config'] = automl_config
+                
+            state['step'] = 'models_selected'
+
             return state
 
         except Exception as e:
@@ -351,22 +374,44 @@ class AutoMLAgent:
             # 1. LOAD AND COERCE DATA TYPES
             data = state['data'].copy()
             target_column = state['target_column']
-            
-            # FORCE Target to numeric for Regression
-            if state['problem_type'] == 'regression':
-                data[target_column] = pd.to_numeric(data[target_column], errors='coerce')
-                # Drop rows where target coercion failed (e.g. if there were actual strings)
-                data = data.dropna(subset=[target_column])
-
             problem_type = state['problem_type']
+            
+                        # Ensure Dask compatibility
+            if not isinstance(data, dd.DataFrame):
+                data = dd.from_pandas(data, npartitions=10)
+
             X = data.drop(columns=[target_column])
-            # Automatically convert any other 'object' columns to numeric if possible
-            # This handles features that were also loaded as strings
-            for col in X.select_dtypes(include=['object']).columns:
-                X[col] = pd.to_numeric(X[col], errors='ignore')
+            y = data[target_column]
+
+            # Convert all columns to numeric where possible
+            X = X.map_partitions(lambda df: df.apply(pd.to_numeric, errors="coerce"))
+            y = dd.to_numeric(y, errors="coerce")
+
+            # Convert to pandas before sklearn/AutoGluon
+            if hasattr(X, "compute"):
+                X = X.compute()
+            if hasattr(y, "compute"):
+                y = y.compute()
+
+            # Drop rows where target is missing
+            valid_idx = ~y.isna()
+            X = X.loc[valid_idx]
+            y = y.loc[valid_idx]
+
+            # # FORCE Target to numeric for Regression
+            # if state['problem_type'] == 'regression':
+            #     data[target_column] = pd.to_numeric(data[target_column], errors='coerce')
+            #     # Drop rows where target coercion failed (e.g. if there were actual strings)
+            #     data = data.dropna(subset=[target_column])
+
+            # X = data.drop(columns=[target_column])
+            # # Automatically convert any other 'object' columns to numeric if possible
+            # # This handles features that were also loaded as strings
+            # for col in X.select_dtypes(include=['object']).columns:
+            #     X[col] = pd.to_numeric(X[col], errors='ignore')
                 
             X_encoded = pd.get_dummies(X, drop_first=True)
-            y = data[target_column]
+            # y = data[target_column]
 
             # Split data here to ensure we have test labels for the confusion matrix
             from sklearn.model_selection import train_test_split
@@ -381,7 +426,16 @@ class AutoMLAgent:
                 trained_model, metrics = self._train_with_autogluon(
                     X_train, y_train, problem_type, automl_config
                 )
-                y_pred = trained_model.predict(X_test)
+                # y_pred = trained_model.predict(X_test)
+
+                                # Safe prediction handling
+                if hasattr(trained_model, 'feature_names_in_'):
+                    seen_cols = list(trained_model.feature_names_in_)
+                    X_test_pre = X_test.reindex(columns=seen_cols, fill_value=0)
+                    y_pred = trained_model.predict(X_test_pre)
+                else:
+                    y_pred = trained_model.predict(X_test)
+
             else:
                 selected_models = state.get('selected_models', []) or ['RandomForest']
                 # trained_model, metrics = self._train_simple_models(X, y, problem_type, selected_models)
@@ -391,11 +445,29 @@ class AutoMLAgent:
                 # # Re-align columns in case dummies changed
                 # X_test_simple = X_test_simple.reindex(columns=pd.get_dummies(X_train, drop_first=True).columns, fill_value=0)
                 # y_pred = trained_model.predict(X_test_simple)
-                y_pred = trained_model.predict(X_test)
+
+                if hasattr(trained_model, 'feature_names_in_'):
+                    seen_cols = list(trained_model.feature_names_in_)
+                    X_test_aligned = X_test.reindex(columns=seen_cols, fill_value=0)
+                else:
+                    X_test_aligned = X_test
+
+                y_pred = trained_model.predict(X_test_aligned)
+
+                # y_pred = trained_model.predict(X_test)
             
             # --- FIX: ADD CONFUSION MATRIX ---
             if problem_type == 'classification':
-                cm = confusion_matrix(y_test, y_pred)
+                # cm = confusion_matrix(y_test, y_pred)
+                if len(y_test) > 50_000:
+                    sample_idx = y_test.sample(n=50_000, random_state=42).index
+                    cm = confusion_matrix(
+                        y_test.loc[sample_idx],
+                        pd.Series(y_pred, index=y_test.index).loc[sample_idx]
+                    )
+                else:
+                    cm = confusion_matrix(y_test, y_pred)
+
                 metrics['confusion_matrix'] = cm.tolist() # Save as list for JSON/Markdown compatibility
                 logger.info(f"[Training Agent] Confusion Matrix generated: {metrics['confusion_matrix']}")
 
@@ -430,7 +502,12 @@ class AutoMLAgent:
             cm_text = ""
             if 'confusion_matrix' in metrics:
                 cm = metrics['confusion_matrix']
-                cm_text = f"\n**Confusion Matrix:**\nPredicted 0: [{cm[0][0]}, {cm[0][1]}]\nPredicted 1: [{cm[1][0]}, {cm[1][1]}]"
+                # cm_text = f"\n**Confusion Matrix:**\nPredicted 0: [{cm[0][0]}, {cm[0][1]}]\nPredicted 1: [{cm[1][0]}, {cm[1][1]}]"
+                if len(cm) > 10:
+                            cm_preview = [row[:10] for row in cm[:10]]
+                            cm_text = "\n**Confusion Matrix:**\n" + "\n".join([str(row) for row in cm_preview])
+                else:
+                    cm_text = "\n**Confusion Matrix:**\n" + "\n".join([str(row) for row in cm])
 
             interpretation_prompt = f"""
 Analyze the following model training results:
@@ -641,6 +718,17 @@ Provide your analysis and decision:
             
             logger.info(f"Initializing AutoGluon predictor with config: {config}")
             
+            rows, features = X.shape
+            # --- Large-scale handling ---
+            if rows > 1_000_000 or features > 500:
+                # Sample 1–5% of data for AutoML to avoid memory issues
+                frac = min(0.05, 500_000 / rows)
+                X_sample = X.sample(frac=frac, random_state=42)
+                y_sample = y.loc[X_sample.index]
+                logger.info(f"[AutoGluon] Large dataset detected ({rows} rows, {features} features). Sampling {len(X_sample)} rows for training.")
+            else:
+                X_sample, y_sample = X, y
+
             # Prepare data with target column
             train_data = X.copy()
             target_col_name = 'target'
@@ -910,6 +998,13 @@ Provide your analysis and decision:
         except ImportError:
             xgb_available = False
             logger.warn("XGBoost not available, will use GradientBoosting as alternative")
+
+
+        if X.shape[0] > 1_000_000 or X.shape[1] > 500:
+            frac = min(0.05, 500_000 / X.shape[0])  # max 500k rows
+            X = X.sample(frac=frac, random_state=42)
+            y = y.loc[X.index]
+            logger.info(f"[Simple Models] Large dataset detected. Sampling {len(X)} rows for training.")
 
         # Ensure we have a valid list to iterate over
         if not model_names or not isinstance(model_names, list):
