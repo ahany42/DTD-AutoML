@@ -1,6 +1,7 @@
 import json
 import pandas as pd
 import numpy as np
+import seaborn as sns
 from typing import Optional, Dict, Any, List
 from pathlib import Path
 from scipy import stats as scipy_stats
@@ -41,7 +42,7 @@ class EDAAgent:
         df_name: str = "dataset",
         top_k: int = 5,
     ):
-        self.df = df[~df.apply(lambda row: all(str(row[c]) == c for c in df.columns), axis=1)].reset_index(drop=True)
+        self.df = df
         self.target = target_column
         self.df_name = df_name
         self.top_k = top_k
@@ -344,7 +345,7 @@ class EDAAgent:
         # Drop constant columns — correlation undefined when std == 0
         numeric_cols = [col for col in numeric_cols if self.df[col].std() > 0]
 
-        # --- Numeric ↔ Numeric ---
+        # --- Numeric ↔️ Numeric ---
         if len(numeric_cols) >= 2:
             corr_matrix = self.df[numeric_cols].corr()
             strong_pairs: List[Dict[str, Any]] = []
@@ -366,7 +367,7 @@ class EDAAgent:
         else:
             insights["numeric_correlations"] = None
 
-        # --- Feature ↔ Target ---
+        # --- Feature ↔️ Target ---
         if not (self.target and self.target in self.df.columns):
             insights["target_relationships"] = None
             return insights
@@ -691,177 +692,494 @@ class EDAAgent:
     # ==================================================================
     # OUTPUT C — Frontend-ready JSON
     # ==================================================================
-    
-    # def generate_frontend_json(self, output_dir: str = "Output") -> str:
-    #     """
-    #     Builds a comprehensive JSON containing raw stats and chart-ready data.
-    #     """
-    #     if not self.report:
-    #         raise ValueError("Run EDA before generating frontend data.")
-
-    #     # Prepare Chart Data for Frontend
-    #     visualizations = {
-    #         "missing_values_chart": self._get_missing_values_data(),
-    #         "numeric_distributions": self._get_numeric_distribution_data(),
-    #         "categorical_distributions": self._get_categorical_distribution_data(),
-    #         "correlation_matrix": self._get_correlation_matrix_data(),
-    #     }
-
-    #     frontend_payload = {
-    #         "metadata": {
-    #             "df_name": self.df_name,
-    #             "timestamp": pd.Timestamp.now().isoformat(),
-    #             "run_type": self.report["run_type"]
-    #         },
-    #         "report": self.report,
-    #         "visualizations": visualizations
-    #     }
-
-    #     path = Path(output_dir)
-    #     path.mkdir(parents=True, exist_ok=True)
-    #     json_path = path / f"{self.df_name}_frontend_data.json"
-        
-    #     with open(json_path, "w", encoding="utf-8") as f:
-    #         json.dump(frontend_payload, f, indent=2, default=str)
-            
-    #     return str(json_path)
 
     def generate_frontend_json(self, output_dir: str = "Output") -> str:
+        """
+        Builds a fully frontend-friendly JSON where every section uses
+        constant, predictable keys regardless of dataset or run_type.
 
-        report = self.report
-        summary = report["dataset_summary"]
-        target = report["target_analysis"]
-        quality = report["data_quality_report"]
-        relationships = report["relationship_insights"]
-        columns = report["column_profiles"]
-        warnings = report["eda_warnings"]   
-        relationships  = report.get("relationship_insights") or {}
-        target_relationships = relationships.get("target_relationships") or {}
-        target_rels = target_relationships if isinstance(target_relationships, dict) else {}
-        frontend_json = {
+        Shape contract
+        --------------
+        {
+          "metadata": { ... },                          # always present
+          "report": {
+            "run_type": str,
+            "dataset_summary": { ... },                 # always present
+            "feature_scale_analysis": { ... },          # always present
+            "column_profiles": [ <ColumnProfile>, ... ],# ARRAY, constant keys
+            "target_analysis": <TargetAnalysis>,        # constant keys
+            "data_quality_report": { ... },             # arrays not dicts
+            "relationship_insights": { ... },           # constant keys
+            "eda_warnings": [ <Warning>, ... ],         # always array
+            "total_feature_count": int,
+            "multicollinearity": { ... },
+            "signal_analysis": { ... }                  # constant keys
+          },
+          "visualizations": {
+            "missing_values_chart": [ ... ],            # always array
+            "numeric_distributions": [ <NumDist>, ... ],# ARRAY
+            "categorical_distributions": [ <CatDist>, ... ], # ARRAY
+            "correlation_matrix": { ... } | null
+          }
+        }
+        """
+        if not self.report:
+            raise ValueError("Run EDA before generating frontend data.")
 
-             "meta": [
-                {"title": "Agent",        "value": f"{self.df_name}_analysis"},
-                {"title": "Stage",        "value": report["run_type"]},
-                {"title": "Dataset Name", "value": self.df_name},
-                {"title": "Timestamp",    "value": pd.Timestamp.now().isoformat()},
-],  
-            "summary": [
-                {"title": "Rows", "value": summary["n_rows"]},
-                {"title": "Columns", "value": summary["n_columns"]},
-                {"title": "Memory (MB)", "value": summary["memory_usage_mb"]},
-                {"title": "Duplicate Rows", "value": summary["duplicate_rows"]},
-                {"title": "Duplicate Ratio", "value": quality["duplicates"]["duplicate_ratio"]},
-                {"title": "Target Column", "value": summary["target_column"]},
-                {"title": "Target Dtype", "value": summary["target_dtype"]},
-                {"title": "Total Feature Count", "value": report["total_feature_count"]}
-            ],  
-            "target_analysis": [
-                {"title": "Task Type", "value": target["task_type"]},
-                {"title": "Is Binary", "value": target["is_binary"]},
-                {"title": "Number of Classes", "value": target["n_classes"]},
-                {"title": "Imbalance Ratio", "value": target["imbalance_ratio"]},
-                {"title": "Imbalance Severity", "value": target["imbalance_severity"]},
-                {"title": "Entropy", "value": target["target_entropy"]},
-                {"title": "Requires Stratification", "value": target["requires_stratification"]},
-                {
-                    "title": "Class Distribution",
-                    "value": [
-                        {"class": str(k), "ratio": v}
-                        for k, v in target["class_distribution"].items()
-                    ]
-                }
-            ],  
-            "data_quality": [
-                {"title": "Total Missing Cells", "value": quality["missing_values"]["total_missing_cells"]},
-                {"title": "Duplicate Count", "value": summary["duplicate_rows"]},
-                {"title": "Duplicate Ratio", "value": quality["duplicates"]["duplicate_ratio"]}
-            ], 
-            "relationships": [
-                {"title": f"{col} (Cramer's V)", "value": val}
-                for col, val in (target_rels.get("cramers_v") or {}).items()
-            ] if target_rels.get("target_type") == "categorical" else [
-                {"title": f"{col} (Pearson r)", "value": val}
-                for col, val in (target_rels.get("feature_correlations") or {}).items()
-            ],
-           "columns": [
-            {
-                "title": col_name,
-                "type": profile["data_type"],
-                "missing_count": profile["missing_count"],
-                "unique_count": profile["unique_count"],
-                "high_cardinality": profile.get("is_high_cardinality", False),  # .get() — key absent on numeric cols
-                "top_values": [
-                    {"value": str(v), "count": int(c)}
-                    for v, c in profile["top_values"].items()  # ← .items() goes HERE, on the dict itself
-                ] if "top_values" in profile else []
-            }
-            for col_name, profile in columns.items()      
-            ],  
-            "warnings": [
-                {
-                    "title": w["type"].replace("_", " ").title(),
-                    "columns": w.get("columns", []),
-                    "message": w["message"]
-                }
-                for w in warnings
-            ]
-        }   
+        frontend_payload = {
+            "metadata": {
+                "df_name": self.df_name,
+                "timestamp": pd.Timestamp.now().isoformat(),
+                "run_type": self.report["run_type"],
+            },
+            "report": self._build_frontend_report(),
+            "visualizations": self._build_frontend_visualizations(),
+        }
+
         path = Path(output_dir)
         path.mkdir(parents=True, exist_ok=True)
-
-        # Build JSON file path
         json_path = path / f"{self.df_name}_frontend_data.json"
 
-        # Save JSON file
         with open(json_path, "w", encoding="utf-8") as f:
-            json.dump(frontend_json, f, indent=2, default=str)
+            json.dump(frontend_payload, f, indent=2, default=str)
 
-        # Return path to saved file
         return str(json_path)
 
-    # --- Chart Data Extractors (Frontend ready) ---
+    # ------------------------------------------------------------------
+    # Frontend report builder — normalises every sub-section
+    # ------------------------------------------------------------------
 
-    def _get_missing_values_data(self):
+    def _build_frontend_report(self) -> Dict[str, Any]:
+        r = self.report
+        return {
+            "run_type": r["run_type"],
+            "dataset_summary":        self._fe_dataset_summary(r["dataset_summary"]),
+            "feature_scale_analysis": r["feature_scale_analysis"],          # already stable
+            "column_profiles":        self._fe_column_profiles(r["column_profiles"]),
+            "target_analysis":        self._fe_target_analysis(r.get("target_analysis")),
+            "data_quality_report":    self._fe_data_quality_report(r["data_quality_report"]),
+            "relationship_insights":  self._fe_relationship_insights(r.get("relationship_insights")),
+            "eda_warnings":           self._fe_eda_warnings(r.get("eda_warnings", [])),
+            "total_feature_count":    r.get("total_feature_count", 0),
+            "multicollinearity":      r.get("multicollinearity", {"threshold": 0.7, "pairs": []}),
+            "signal_analysis":        self._fe_signal_analysis(r.get("signal_analysis", {})),
+        }
+
+    # ── dataset_summary ───────────────────────────────────────────────
+    def _fe_dataset_summary(self, s: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Converts column_types lists-inside-dict to a consistent array of
+        {name, type} objects so the frontend never has to branch on type.
+        """
+        column_type_map: Dict[str, str] = {}
+        for type_label, cols in s.get("column_types", {}).items():
+            for col in cols:
+                column_type_map[col] = type_label
+
+        return {
+            "n_rows":           s["n_rows"],
+            "n_columns":        s["n_columns"],
+            "column_types": {
+                "numerical":    s["column_types"].get("numerical", []),
+                "categorical":  s["column_types"].get("categorical", []),
+                "datetime":     s["column_types"].get("datetime", []),
+                "boolean":      s["column_types"].get("boolean", []),
+            },
+            "column_type_list": [
+                {"column": col, "type": ctype}
+                for col, ctype in column_type_map.items()
+            ],
+            "memory_usage_mb":  s["memory_usage_mb"],
+            "duplicate_rows":   s["duplicate_rows"],
+            "target_column":    s.get("target_column"),
+            "target_dtype":     s.get("target_dtype"),
+        }
+
+    # ── column_profiles → array with uniform keys ─────────────────────
+    def _fe_column_profiles(self, profiles: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """
+        Converts the column-keyed dict into an array of objects where every
+        element carries the same top-level keys.  Type-specific stats are
+        grouped under "numeric_stats" / "categorical_stats" / "datetime_stats"
+        so the frontend always knows where to look.
+        """
+        result: List[Dict[str, Any]] = []
+        for col, s in profiles.items():
+            data_type = s["data_type"]
+
+            # ── shared keys (always present) ──────────────────────────
+            entry: Dict[str, Any] = {
+                "column":         col,
+                "data_type":      data_type,
+                "dtype":          s["dtype"],
+                "missing_count":  s["missing_count"],
+                "missing_ratio":  s["missing_ratio"],
+                "unique_count":   s["unique_count"],
+                "is_unique_per_row": s["is_unique_per_row"],
+                # Null sentinels for type-specific blocks
+                "numeric_stats":     None,
+                "categorical_stats": None,
+                "datetime_stats":    None,
+            }
+
+            # ── numeric block ──────────────────────────────────────────
+            if data_type == "numeric":
+                entry["numeric_stats"] = {
+                    "mean":             s.get("mean"),
+                    "std":              s.get("std"),
+                    "min":              s.get("min"),
+                    "max":              s.get("max"),
+                    "median":           s.get("median"),
+                    "q1":               s.get("q1"),
+                    "q3":               s.get("q3"),
+                    "iqr":              s.get("iqr"),
+                    "skewness":         s.get("skewness"),
+                    "kurtosis":         s.get("kurtosis"),
+                    "zero_count":       s.get("zero_count"),
+                    "outlier_count_iqr":  s.get("outlier_count_iqr"),
+                    "outlier_ratio_iqr":  s.get("outlier_ratio_iqr"),
+                    "is_normal":        s.get("is_normal"),
+                }
+
+            # ── categorical block ──────────────────────────────────────
+            elif data_type == "categorical":
+                top_values = s.get("top_values", {})
+                entry["categorical_stats"] = {
+                    "is_high_cardinality": s.get("is_high_cardinality", False),
+                    # Stable array instead of dynamic object keys
+                    "top_values": [
+                        {"label": label, "count": count}
+                        for label, count in top_values.items()
+                    ],
+                }
+
+            # ── datetime block ─────────────────────────────────────────
+            elif data_type == "datetime":
+                entry["datetime_stats"] = {
+                    "min_date": s.get("min_date"),
+                    "max_date": s.get("max_date"),
+                }
+
+            result.append(entry)
+        return result
+
+    # ── target_analysis → constant keys ───────────────────────────────
+    def _fe_target_analysis(self, ta: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+        """
+        Returns one object with a fixed schema.  Fields that don't apply to
+        the current task_type are present but set to null.
+        """
+        base: Dict[str, Any] = {
+            "column":    None,
+            "dtype":     None,
+            "task_type": None,
+            # classification fields
+            "n_classes":            None,
+            "is_binary":            None,
+            "class_distribution":   [],   # array: [{label, ratio}]
+            "minority_class_ratio": None,
+            "majority_class_ratio": None,
+            "imbalance_ratio":      None,
+            "imbalance_severity":   None,
+            "target_entropy":       None,
+            "min_samples_per_class": None,
+            "requires_stratification": None,
+            "rare_class_risk":      None,
+            # regression fields
+            "mean":            None,
+            "std":             None,
+            "variance":        None,
+            "min":             None,
+            "max":             None,
+            "range":           None,
+            "skewness":        None,
+            "skew_severity":   None,
+            "kurtosis":        None,
+            "outlier_ratio_iqr": None,
+            "heavy_tailed":    None,
+            "low_variance_target": None,
+        }
+
+        if not ta:
+            return base
+
+        base["column"]    = ta.get("column")
+        base["dtype"]     = ta.get("dtype")
+        base["task_type"] = ta.get("task_type")
+
+        if ta.get("task_type") == "classification":
+            raw_dist = ta.get("class_distribution", {})
+            base.update({
+                "n_classes":            ta.get("n_classes"),
+                "is_binary":            ta.get("is_binary"),
+                "class_distribution":   [
+                    {"label": str(label), "ratio": ratio}
+                    for label, ratio in raw_dist.items()
+                ],
+                "minority_class_ratio": ta.get("minority_class_ratio"),
+                "majority_class_ratio": ta.get("majority_class_ratio"),
+                "imbalance_ratio":      ta.get("imbalance_ratio"),
+                "imbalance_severity":   ta.get("imbalance_severity"),
+                "target_entropy":       ta.get("target_entropy"),
+                "min_samples_per_class": ta.get("min_samples_per_class"),
+                "requires_stratification": ta.get("requires_stratification"),
+                "rare_class_risk":      ta.get("rare_class_risk"),
+            })
+
+        elif ta.get("task_type") == "regression":
+            base.update({
+                "mean":              ta.get("mean"),
+                "std":               ta.get("std"),
+                "variance":          ta.get("variance"),
+                "min":               ta.get("min"),
+                "max":               ta.get("max"),
+                "range":             ta.get("range"),
+                "skewness":          ta.get("skewness"),
+                "skew_severity":     ta.get("skew_severity"),
+                "kurtosis":          ta.get("kurtosis"),
+                "outlier_ratio_iqr": ta.get("outlier_ratio_iqr"),
+                "heavy_tailed":      ta.get("heavy_tailed"),
+                "low_variance_target": ta.get("low_variance_target"),
+            })
+
+        return base
+
+    # ── data_quality_report → arrays everywhere ────────────────────────
+    def _fe_data_quality_report(self, dq: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Converts every object-keyed sub-section into a consistent array.
+        """
+        # missing values: dict → array
+        raw_missing = dq.get("missing_values", {}).get("columns_with_missing", {})
+        missing_array = [
+            {
+                "column":        col,
+                "missing_count": info["missing_count"],
+                "missing_ratio": info["missing_ratio"],
+            }
+            for col, info in raw_missing.items()
+        ]
+
+        # near-constant: dict → array
+        raw_near_const = dq.get("low_variance_columns", {}).get("near_constant_columns", {})
+        near_const_array = [
+            {"column": col, "top_frequency": freq}
+            for col, freq in raw_near_const.items()
+        ]
+
+        return {
+            "missing_values": {
+                "total_missing_cells":   dq["missing_values"]["total_missing_cells"],
+                "n_columns_with_missing": dq["missing_values"]["n_columns_with_missing"],
+                "columns_with_missing":  missing_array,
+            },
+            "duplicates": dq.get("duplicates", {"duplicate_row_count": 0, "duplicate_ratio": 0.0}),
+            "low_variance_columns": {
+                "constant_columns":     dq.get("low_variance_columns", {}).get("constant_columns", []),
+                "near_constant_columns": near_const_array,
+            },
+            "unique_per_row_columns": dq.get("unique_per_row_columns", []),
+            "type_issues": {
+                "mixed_type_columns": dq.get("type_issues", {}).get("mixed_type_columns", []),
+            },
+        }
+
+    # ── relationship_insights → constant keys ─────────────────────────
+    def _fe_relationship_insights(self, ri: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+        """
+        Normalises target_relationships so both numeric and categorical
+        targets produce the same top-level keys (unused ones = null/[]).
+        """
+        base: Dict[str, Any] = {
+            "numeric_correlations": {
+                "threshold":    0.5,
+                "strong_pairs": [],
+            },
+            "target_relationships": {
+                "target_type":         None,
+                # numeric target → array of {feature, correlation}
+                "feature_correlations": [],
+                # categorical target → array of {feature, group_means: [{label, mean}]}
+                "group_means":         [],
+                # categorical target → array of {feature, cramers_v}
+                "cramers_v":           [],
+            },
+        }
+
+        if not ri:
+            return base
+
+        # numeric correlations
+        num_corr = ri.get("numeric_correlations")
+        if num_corr:
+            base["numeric_correlations"] = {
+                "threshold":    num_corr.get("threshold", 0.5),
+                "strong_pairs": num_corr.get("strong_pairs", []),
+            }
+
+        # target relationships
+        tr = ri.get("target_relationships")
+        if not tr:
+            return base
+
+        target_type = tr.get("target_type")
+        base["target_relationships"]["target_type"] = target_type
+
+        if target_type == "numeric":
+            raw_corr = tr.get("feature_correlations", {})
+            base["target_relationships"]["feature_correlations"] = [
+                {"feature": feat, "correlation": corr}
+                for feat, corr in raw_corr.items()
+            ]
+
+        elif target_type == "categorical":
+            # group_means: {feature: {label: mean}} → array
+            raw_gm = tr.get("group_means", {})
+            base["target_relationships"]["group_means"] = [
+                {
+                    "feature": feat,
+                    "group_means": [
+                        {"label": str(label), "mean": mean}
+                        for label, mean in groups.items()
+                    ],
+                }
+                for feat, groups in raw_gm.items()
+            ]
+
+            # cramers_v: {feature: value} → array
+            raw_cv = tr.get("cramers_v", {})
+            base["target_relationships"]["cramers_v"] = [
+                {"feature": feat, "cramers_v": val}
+                for feat, val in raw_cv.items()
+            ]
+
+        return base
+
+    # ── eda_warnings → ensure columns key always exists ───────────────
+    def _fe_eda_warnings(self, warnings: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        Guarantees every warning object has a `columns` key (empty list if
+        the original warning was dataset-level and had none).
+        """
+        result = []
+        for w in warnings:
+            result.append({
+                "type":    w.get("type"),
+                "columns": w.get("columns", []),
+                "message": w.get("message", ""),
+                # pass through any extra keys (e.g. imbalance_ratio)
+                **{k: v for k, v in w.items() if k not in ("type", "columns", "message")},
+            })
+        return result
+
+    # ── signal_analysis → constant top-level key ──────────────────────
+    def _fe_signal_analysis(self, sa: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Always exposes both `classification` and `regression` blocks;
+        the one that doesn't apply is null.
+        Converts inner dicts to arrays of {feature, score} / {feature, value}.
+        """
+        # classification
+        clf_raw = sa.get("classification_feature_analysis", {})
+        clf_signal = clf_raw.get("univariate_class_signal", {}) if clf_raw else {}
+
+        # regression
+        reg_raw = sa.get("regression_feature_analysis", {})
+        lin_raw = reg_raw.get("linear_signal_strength", {}) if reg_raw else {}
+
+        return {
+            "classification_feature_analysis": {
+                "univariate_class_signal": [
+                    {"feature": feat, "f_score": score}
+                    for feat, score in clf_signal.items()
+                ],
+            } if clf_raw else None,
+            "regression_feature_analysis": {
+                "linear_signal_strength": [
+                    {"feature": feat, "abs_pearson": val}
+                    for feat, val in lin_raw.items()
+                ],
+                "non_linear_candidates": reg_raw.get("non_linear_candidates", []) if reg_raw else [],
+            } if reg_raw else None,
+        }
+
+    # ------------------------------------------------------------------
+    # Visualization builders
+    # ------------------------------------------------------------------
+
+    def _build_frontend_visualizations(self) -> Dict[str, Any]:
+        return {
+            "missing_values_chart":     self._get_missing_values_data(),
+            "numeric_distributions":    self._get_numeric_distribution_data(),
+            "categorical_distributions": self._get_categorical_distribution_data(),
+            "correlation_matrix":       self._get_correlation_matrix_data(),
+        }
+
+    def _get_missing_values_data(self) -> List[Dict[str, Any]]:
+        """Always an array of {column, count, ratio}."""
         quality = self.report["data_quality_report"]
         missing = quality["missing_values"]["columns_with_missing"]
         return [
-            {"column": col, "count": info["missing_count"], "ratio": info["missing_ratio"]}
+            {
+                "column": col,
+                "count":  info["missing_count"],
+                "ratio":  info["missing_ratio"],
+            }
             for col, info in missing.items()
         ]
 
-    def _get_numeric_distribution_data(self):
+    def _get_numeric_distribution_data(self) -> List[Dict[str, Any]]:
+        """
+        Array of {column, histogram: {counts, bins}, raw_sample}.
+        Previously a dict keyed by column name — now a stable array.
+        """
         profiles = self.report["column_profiles"]
-        numeric_data = {}
+        result: List[Dict[str, Any]] = []
         for col, stats in profiles.items():
-            if stats["data_type"] == "numeric" and col != self.target:
-                series = self.df[col].dropna()
-                # Sample for frontend performance
-                sample = series.sample(min(len(series), 50), random_state=42).tolist()
-                # Generate histogram bins on backend to save frontend CPU
-                counts, bin_edges = np.histogram(series, bins=20)
-                numeric_data[col] = {
-                    "histogram": {"counts": counts.tolist(), "bins": bin_edges.tolist()},
-                    "raw_sample": sample 
-                }
-        return numeric_data
+            if stats["data_type"] != "numeric" or col == self.target:
+                continue
+            series = self.df[col].dropna()
+            sample = series.sample(min(len(series), 50), random_state=42).tolist()
+            counts, bin_edges = np.histogram(series, bins=20)
+            result.append({
+                "column":     col,
+                "histogram":  {
+                    "counts": counts.tolist(),
+                    "bins":   bin_edges.tolist(),
+                },
+                "raw_sample": sample,
+            })
+        return result
 
-    def _get_categorical_distribution_data(self):
+    def _get_categorical_distribution_data(self) -> List[Dict[str, Any]]:
+        """
+        Array of {column, top_values: [{label, count}]}.
+        Previously a dict of dicts with dynamic label keys.
+        """
         profiles = self.report["column_profiles"]
-        return {
-            col: stats["top_values"]
-            for col, stats in profiles.items()
-            if stats["data_type"] == "categorical" and col != self.target
-        }
+        result: List[Dict[str, Any]] = []
+        for col, stats in profiles.items():
+            if stats["data_type"] != "categorical" or col == self.target:
+                continue
+            top_values = stats.get("top_values", {})
+            result.append({
+                "column": col,
+                "top_values": [
+                    {"label": str(label), "count": count}
+                    for label, count in top_values.items()
+                ],
+            })
+        return result
 
-    def _get_correlation_matrix_data(self):
+    def _get_correlation_matrix_data(self) -> Optional[Dict[str, Any]]:
+        """Unchanged — already frontend-friendly."""
         numeric_cols = self.df.select_dtypes(include=["number"]).columns.tolist()
-        if len(numeric_cols) < 2: return None
-        
+        if len(numeric_cols) < 2:
+            return None
         corr = self.df[numeric_cols].corr().round(3)
         return {
             "columns": numeric_cols,
-            "values": corr.values.tolist()
+            "values":  corr.values.tolist(),
         }
     # ==================================================================
     # Unified export  (single call — routes automatically)
@@ -914,118 +1232,91 @@ class EDAAgent:
 
 
 class TargetInferenceAgent:
-    
-    ID_KEYWORDS = {"id", "uuid", "vin", "index", "code"}
-    POSITIVE_KEYWORDS = {
-        "target", "label", "price", "score",
-        "rating", "outcome", "status", "result"
-    }
-    NEGATIVE_KEYWORDS = {"class", "level", "rank", "group"}
+    """
+    Infers the most likely target column using structural, semantic,
+    and distributional heuristics.
+    """
+
+    ID_KEYWORDS = {"id", "uuid", "vin", "index"}
+    TARGET_KEYWORDS = {"target", "label", "class", "price", "score", "rating", "outcome"}
 
     def __init__(self, df: pd.DataFrame):
-        self.df = self._sanitize(df.copy())
-
-    def _sanitize(self, df: pd.DataFrame) -> pd.DataFrame:
-        # Drop duplicate rows
-        df = df.drop_duplicates()
-        # Remove rows identical to header
-        df = df[
-            ~df.apply(
-                lambda row: all(str(row[col]) == col for col in df.columns),
-                axis=1
-            )
-        ]
-        # Attempt numeric coercion
-        for col in df.columns:
-            df[col] = pd.to_numeric(df[col], errors="ignore")
-
-        return df
+        self.df = df
 
     def run(self) -> Dict[str, Any]:
         scores: Dict[str, float] = {}
+    
         n_rows = len(self.df)
-
+    
         for col in self.df.columns:
             series = self.df[col]
-            name = col.lower()
             score = 0.0
+            name = col.lower()
+    
             # --- Hard exclusions ---
             if any(k in name for k in self.ID_KEYWORDS):
                 continue
+            
             nunique = series.nunique(dropna=True)
             missing_ratio = series.isna().mean()
-
-            # --- Missingness ---
+    
+            # --- Missingness (targets are usually observed) ---
             if missing_ratio < 0.05:
                 score += 1.0
-            elif missing_ratio > 0.4:
-                score -= 2.0
-
-            # --- Cardinality ---
+            elif missing_ratio > 0.3:
+                score -= 1.0
+    
+            # --- Cardinality signal ---
             if nunique == 2:
-                score += 7.0   # Strong binary signal
+                score += 3.0  # VERY strong signal (Survived)
             elif 2 < nunique <= 10:
-                score += 3.0
+                score += 1.5
             elif nunique < n_rows:
-                score += 0.5
-            else:
-                score -= 2.0  # Unique per row → likely ID
-
-            # --- Distribution ---
+                score += 0.3
+    
+            # --- Distribution signal ---
             if nunique > 1:
                 value_counts = series.value_counts(normalize=True, dropna=True)
                 majority_ratio = value_counts.iloc[0]
-
+    
                 if 0.5 <= majority_ratio <= 0.9:
-                    score += 1.5
-                elif majority_ratio > 0.97:
-                    score -= 2.0  # Near constant
-
-                # Entropy bonus (balanced classes)
-                entropy = -np.sum(value_counts * np.log2(value_counts + 1e-9))
-                if entropy > 0.8:
-                    score += 1.5
-
+                    score += 1.0  # good classification target
+                elif majority_ratio > 0.95:
+                    score -= 1.0  # near-constant
+    
             # --- Type signal ---
             if pd.api.types.is_numeric_dtype(series):
-                if nunique > 15:
-                    score += 3.0  # Strong regression signal
-                else:
-                    score += 0.5
-            else:
-                if nunique <= 20:
-                    score += 0.5
-
-            # --- Semantic signal ---
-            if any(k in name for k in self.POSITIVE_KEYWORDS):
-                score += 4.0
-
-            if any(k in name for k in self.NEGATIVE_KEYWORDS):
-                score -= 2.0
-
-            scores[col] = round(score, 3)
-
+                score += 0.5  # reduced (was too dominant)
+            elif nunique <= 20:
+                score += 0.3
+    
+            # --- Semantic signals ---
+            POSITIVE_KEYWORDS = {"target", "label", "price", "score", "rating", "outcome"}
+            NEGATIVE_KEYWORDS = {"class", "level", "rank", "group"}
+    
+            if any(k in name for k in POSITIVE_KEYWORDS):
+                score += 2.5
+    
+            if any(k in name for k in NEGATIVE_KEYWORDS):
+                score -= 1.5  # penalize Pclass-style features
+    
+            scores[col] = score
+    
         if not scores:
             return {
                 "inferred_target": None,
                 "confidence": 0.0,
                 "alternatives": [],
-                "scores": {}
             }
-
+    
         ranked = sorted(scores.items(), key=lambda x: x[1], reverse=True)
-
         best_col, best_score = ranked[0]
-        second_score = ranked[1][1] if len(ranked) > 1 else 0.0
-
-        margin = best_score - second_score
-        # Margin-based confidence (much more meaningful)
-        confidence = min(0.98, round(0.5 + (margin / 10.0), 3))
-        confidence = max(confidence, 0.0)
-
+    
+        total = sum(abs(s) for _, s in ranked[:3]) or 1.0
+        confidence = round(min(0.95, best_score / total), 3)
+    
         return {
             "inferred_target": best_col,
             "confidence": confidence,
             "alternatives": [c for c, _ in ranked[1:3]],
-            "scores": dict(ranked)
         }
