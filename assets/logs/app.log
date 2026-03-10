@@ -5406,3 +5406,144 @@ ValueError: could not convert string to float: 'median_house_value'
 [2026-03-09 02:29:12] [INFO] [Save Outputs]   pickle     → Output/automl/best_model_20260309_022912.pkl
 [2026-03-09 02:29:12] [INFO] [Save Outputs] ─────────────────────────────────────
 >>>>>>> 0d7493d9f (deleted data analyzer and autogloun with optuna)
+
+
+=== New Run — 2026-03-10 02:25:32 ===
+
+
+=== New Run — 2026-03-10 02:26:18 ===
+[2026-03-10 02:26:18] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-03-10 02:26:19] [INFO] [EDA Agent] RAW analysis complete. Found 5 warnings.
+[2026-03-10 02:26:19] [WARNING]  - Columns with > 50% missing values detected.
+[2026-03-10 02:26:19] [WARNING]  - High-cardinality categoricals detected.
+[2026-03-10 02:26:19] [WARNING]  - Likely identifier columns (unique per row).
+[2026-03-10 02:26:19] [WARNING]  - Numeric columns with > 5 % outliers (IQR).
+[2026-03-10 02:26:19] [WARNING]  - Non-normal numeric columns (Shapiro-Wilk).
+[2026-03-10 02:26:19] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+
+
+=== New Run — 2026-03-10 02:32:34 ===
+
+
+=== New Run — 2026-03-10 02:32:39 ===
+[2026-03-10 02:32:39] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-03-10 02:32:39] [INFO] [EDA Agent] RAW analysis complete. Found 5 warnings.
+[2026-03-10 02:32:39] [WARNING]  - Columns with > 50% missing values detected.
+[2026-03-10 02:32:39] [WARNING]  - High-cardinality categoricals detected.
+[2026-03-10 02:32:39] [WARNING]  - Likely identifier columns (unique per row).
+[2026-03-10 02:32:39] [WARNING]  - Numeric columns with > 5 % outliers (IQR).
+[2026-03-10 02:32:39] [WARNING]  - Non-normal numeric columns (Shapiro-Wilk).
+[2026-03-10 02:32:39] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-03-10 02:33:09] [INFO] [EDA Agent] Starting CLEAN data analysis...
+[2026-03-10 02:33:10] [INFO] [EDA Agent] CLEAN analysis complete. Found 2 warnings.
+[2026-03-10 02:33:10] [WARNING]  - Numeric columns with > 5 % outliers (IQR).
+[2026-03-10 02:33:10] [WARNING]  - Non-normal numeric columns (Shapiro-Wilk).
+[2026-03-10 02:33:10] [INFO] [EDA Agent] Exporting artifacts for clean stage...
+[2026-03-10 02:33:10] [INFO] [EDA Agent] Generating Meaningful JSON directives for AutoML Agent...
+[2026-03-10 02:33:10] [INFO] [EDA Agent] AutoML context saved to Output/clean.
+[2026-03-10 02:33:10] [INFO] Starting AutoML agent workflow
+[2026-03-10 02:33:10] [INFO] Loading data from: Output\Preprocessing\full_preprocessed.csv
+[2026-03-10 02:33:10] [INFO] Data loaded successfully. Shape: (891, 16)
+[2026-03-10 02:33:10] [INFO] Identifying target column
+[2026-03-10 02:33:10] [INFO] Problem type pre-set by orchestrator: classification
+[2026-03-10 02:33:10] [INFO] Target column: Survived, Problem type: classification
+[2026-03-10 02:33:10] [INFO] [Model Selection Agent] Starting selection using external directives
+[2026-03-10 02:33:16] [INFO] [Training Agent] Executing AutoGluon training strategy
+[2026-03-10 02:33:26] [INFO] Initializing AutoGluon predictor with config: {'models': ['GBM', 'XGB'], 'time_limit': 300, 'preset': 'best_quality'}
+[2026-03-10 02:33:26] [INFO] Mapped 'classification' to 'binary' (2 classes)
+[2026-03-10 02:33:26] [WARNING] AutoGluon training failed: 'AutoMLAgent' object has no attribute 'dataset_path', falling back to simple training...
+[2026-03-10 02:33:29] [INFO] Training simple models with Optuna HPO: ['GBM']
+[2026-03-10 02:33:29] [INFO] [Optuna] Tuning GBM ...
+[2026-03-10 02:33:29] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-10 02:33:29] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-10 02:33:29] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-10 02:33:30] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-10 02:33:30] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-10 02:33:30] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-10 02:33:30] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-10 02:33:30] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-10 02:33:31] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-10 02:33:31] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-10 02:33:31] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-10 02:33:31] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-10 02:33:31] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-10 02:33:31] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-10 02:33:32] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-10 02:33:32] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-10 02:33:32] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-10 02:33:32] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-10 02:33:32] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-10 02:33:33] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-10 02:33:33] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-10 02:33:33] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-10 02:33:33] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-10 02:33:33] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-10 02:33:34] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-10 02:33:34] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-10 02:33:34] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-10 02:33:34] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-10 02:33:34] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-10 02:33:35] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-10 02:33:35] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-10 02:33:35] [INFO] [Optuna] GBM → best params: {}
+[2026-03-10 02:33:35] [INFO] [Optuna] GBM → accuracy: 0.8112
+[2026-03-10 02:33:35] [INFO] Best model: GBM with accuracy: 0.8112
+[2026-03-10 02:33:35] [INFO] [Training Agent] Confusion Matrix generated: [[92, 13], [18, 56]]
+[2026-03-10 02:33:38] [INFO] [Training Agent] Training complete. Score: 0.8112
+[2026-03-10 02:33:38] [INFO] Workflow completed successfully!
+[2026-03-10 02:33:38] [INFO] [Save Outputs] JSON saved → Output\automl\results_20260310_023338.json
+[2026-03-10 02:33:38] [INFO] [Save Outputs] Markdown saved → Output\automl\report_20260310_023338.md
+[2026-03-10 02:33:38] [INFO] [Save Outputs] AutoGluon predictor path pickled → Output\automl\best_model_20260310_023338.pkl
+[2026-03-10 02:33:38] [INFO] [Save Outputs] To reload: TabularPredictor.load('None')
+[2026-03-10 02:33:38] [INFO] [Save Outputs] ── Saved files ──────────────────────
+[2026-03-10 02:33:38] [INFO] [Save Outputs]   json       → Output\automl\results_20260310_023338.json
+[2026-03-10 02:33:38] [INFO] [Save Outputs]   markdown   → Output\automl\report_20260310_023338.md
+[2026-03-10 02:33:38] [INFO] [Save Outputs]   pickle     → Output\automl\best_model_20260310_023338.pkl
+[2026-03-10 02:33:38] [INFO] [Save Outputs] ─────────────────────────────────────
+
+
+=== New Run — 2026-03-10 02:52:42 ===
+
+
+=== New Run — 2026-03-10 02:52:46 ===
+[2026-03-10 02:52:47] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-03-10 02:52:47] [INFO] [EDA Agent] RAW analysis complete. Found 5 warnings.
+[2026-03-10 02:52:47] [WARNING]  - Columns with > 50% missing values detected.
+[2026-03-10 02:52:47] [WARNING]  - High-cardinality categoricals detected.
+[2026-03-10 02:52:47] [WARNING]  - Likely identifier columns (unique per row).
+[2026-03-10 02:52:47] [WARNING]  - Numeric columns with > 5 % outliers (IQR).
+[2026-03-10 02:52:47] [WARNING]  - Non-normal numeric columns (Shapiro-Wilk).
+[2026-03-10 02:52:47] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-03-10 02:53:17] [INFO] [EDA Agent] Starting CLEAN data analysis...
+[2026-03-10 02:53:17] [INFO] [EDA Agent] CLEAN analysis complete. Found 2 warnings.
+[2026-03-10 02:53:17] [WARNING]  - Numeric columns with > 5 % outliers (IQR).
+[2026-03-10 02:53:17] [WARNING]  - Non-normal numeric columns (Shapiro-Wilk).
+[2026-03-10 02:53:17] [INFO] [EDA Agent] Exporting artifacts for clean stage...
+[2026-03-10 02:53:17] [INFO] [EDA Agent] Generating Meaningful JSON directives for AutoML Agent...
+[2026-03-10 02:53:17] [INFO] [EDA Agent] AutoML context saved to Output/clean.
+[2026-03-10 02:53:17] [INFO] Starting AutoML agent workflow
+[2026-03-10 02:53:17] [INFO] Loading data from: Output\Preprocessing\full_preprocessed.csv
+[2026-03-10 02:53:17] [INFO] Data loaded successfully. Shape: (891, 16)
+[2026-03-10 02:53:17] [INFO] Identifying target column
+[2026-03-10 02:53:17] [INFO] Problem type pre-set by orchestrator: classification
+[2026-03-10 02:53:17] [INFO] Target column: Survived, Problem type: classification
+[2026-03-10 02:53:17] [INFO] [Model Selection Agent] Starting selection using external directives
+[2026-03-10 02:53:22] [INFO] [Training Agent] Executing AutoGluon training strategy
+[2026-03-10 02:53:27] [INFO] Initializing AutoGluon predictor with config: {'models': ['GBM', 'XGB'], 'time_limit': 300, 'preset': 'best_quality'}
+[2026-03-10 02:53:27] [INFO] Mapped 'classification' to 'binary' (2 classes)
+[2026-03-10 02:53:27] [INFO] Training AutoGluon with models: ['GBM', 'XGB'], time_limit: 300s, preset: best_quality...
+[2026-03-10 02:53:27] [WARNING] Unknown model 'XGB' - skipping. Valid AutoGluon models: ['GBM', 'XGB', 'GBM', 'CAT', 'NN_TORCH', 'NN_TORCH', 'FASTAI', 'RF', 'RF', 'XT', 'XT', 'KNN', 'LR', 'LR', 'LR', 'LR']
+[2026-03-10 02:53:43] [INFO] AutoGluon training complete. Best model: LightGBM_BAG_L1 (score: 0.8483)
+[2026-03-10 02:53:43] [INFO] Total models trained: 2
+[2026-03-10 02:53:43] [INFO] [Training Agent] Confusion Matrix generated: [[94, 11], [19, 55]]
+[2026-03-10 02:53:46] [INFO] [Training Agent] Training complete. Score: 0.8483
+[2026-03-10 02:53:46] [INFO] Workflow completed successfully!
+[2026-03-10 02:53:46] [INFO] [Save Outputs] JSON saved → Output\automl\results_20260310_025346.json
+[2026-03-10 02:53:46] [INFO] [Save Outputs] Markdown saved → Output\automl\report_20260310_025346.md
+[2026-03-10 02:53:46] [INFO] [Save Outputs] AutoGluon predictor path pickled → Output\automl\best_model_20260310_025346.pkl
+[2026-03-10 02:53:46] [INFO] [Save Outputs] To reload: TabularPredictor.load('D:\Codes\GP\GP code\Output\Preprocessing\Output\AutoGluonModels\run_1773104007')
+[2026-03-10 02:53:46] [INFO] [Save Outputs] ── Saved files ──────────────────────
+[2026-03-10 02:53:46] [INFO] [Save Outputs]   json       → Output\automl\results_20260310_025346.json
+[2026-03-10 02:53:46] [INFO] [Save Outputs]   markdown   → Output\automl\report_20260310_025346.md
+[2026-03-10 02:53:46] [INFO] [Save Outputs]   pickle     → Output\automl\best_model_20260310_025346.pkl
+[2026-03-10 02:53:46] [INFO] [Save Outputs] ─────────────────────────────────────

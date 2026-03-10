@@ -1322,6 +1322,9 @@ Provide your analysis and decision:
         Returns:
             dict: Final state with results + 'saved_files' key
         """
+        self.dataset_path = data_path
+        self.target_column = target_column
+        self.output_dir = output_dir
         initial_state = {
         'data_path': data_path,
         'target_column': target_column,
