@@ -747,10 +747,10 @@ Provide your analysis and decision:
             from pathlib import Path
             import time
 
-            # Anchor to dataset directory
-            base_dir = Path(self.dataset_path).resolve().parent
+            # Default to output directory
+            base_dir = Path("Output").resolve()
 
-            predictor_path = base_dir / "Output" / "AutoGluonModels" / f"run_{int(time.time())}"
+            predictor_path = base_dir / "AutoGluonModels" / f"run_{int(time.time())}"
             predictor_path.mkdir(parents=True, exist_ok=True)
 
             predictor_path = str(predictor_path)
@@ -1015,7 +1015,7 @@ Provide your analysis and decision:
                 return (xgb.XGBClassifier(**params, random_state=42, eval_metric='logloss')
                         if problem_type == 'classification'
                         else xgb.XGBRegressor(**params, random_state=42))
-            elif 'gradient' in name_lower:
+            elif 'gradient' in name_lower or 'gbm' in name_lower:
                 return (GradientBoostingClassifier(**params, random_state=42)
                         if problem_type == 'classification'
                         else GradientBoostingRegressor(**params, random_state=42))
@@ -1053,7 +1053,7 @@ Provide your analysis and decision:
                     'reg_alpha':         trial.suggest_float('reg_alpha', 1e-8, 10.0, log=True),
                     'reg_lambda':        trial.suggest_float('reg_lambda', 1e-8, 10.0, log=True),
                 }
-            elif 'gradient' in name_lower:
+            elif 'gradient' in name_lower or 'gbm' in name_lower:
                 return {
                     'n_estimators':  trial.suggest_int('n_estimators', 50, 500),
                     'learning_rate': trial.suggest_float('learning_rate', 1e-4, 0.3, log=True),

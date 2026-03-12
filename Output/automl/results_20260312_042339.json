@@ -1,0 +1,36 @@
+{
+  "run_timestamp": "20260312_042339",
+  "data_path": "Output/Preprocessing/full_preprocessed.csv",
+  "target_column": "Survived",
+  "problem_type": "classification",
+  "model_selection": {
+    "use_automl": true,
+    "automl_config": {
+      "models": [
+        "GBM",
+        "XGB"
+      ],
+      "time_limit": 300,
+      "preset": "best_quality"
+    },
+    "selected_models": [],
+    "model_selection_reasoning": "```json\n{\n  \"approach\": \"AutoGluon\",\n  \"reasoning\": \"The 'Feature Strengths' section is empty, indicating that no strong linear or simple signals were explicitly identified in the dataset. This suggests that the underlying relationships might be more complex, non-linear, or require sophisticated ensemble methods to capture effectively. AutoGluon is best suited for scenarios with high complexity or non-linear signals, as it automatically explores a wide range of models and ensembles them to achieve robust performance without requiring explicit knowledge of signal linearity.\",\n  \"autogluon_settings\": {\n    \"models_to_prioritize\": [\n      \"GBM\",\n      \"XGB\"\n    ],\n    \"time_limit_seconds\": 300,\n    \"preset_mode\": \"best_quality\"\n  },\n  \"simple_models\": [\n    \"RandomForest\",\n    \"XGBoost\",\n    \"LogisticRegression\"\n  ]\n}\n```"
+  },
+  "training_results": {
+    "training_method": null,
+    "best_model": null,
+    "best_score": null,
+    "metric_name": "score",
+    "models_trained": null,
+    "all_models": [],
+    "all_scores": [],
+    "confusion_matrix": null,
+    "best_params_per_model": {},
+    "optuna_refined_config": null
+  },
+  "agent_messages": [],
+  "workflow": {
+    "final_step": "error",
+    "error": "Failed to train model: AutoMLAgent._train_simple_models() missing 2 required positional arguments: 'problem_type' and 'model_names'"
+  }
+}
