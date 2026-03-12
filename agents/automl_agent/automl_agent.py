@@ -18,7 +18,6 @@ from src.utils.logger import Logger
 # Load environment variables
 import pickle
 from datetime import datetime
-import json
 load_dotenv()
 
 logger = Logger()
@@ -44,6 +43,10 @@ class AgentState(TypedDict):
     step: str  # Current step in the workflow, tracks the progress of the workflow
     agent_messages: Optional[list] #store msgs excganged between sub agents
     human_approved: Optional[bool] # Conversation history from subagents
+    X_train_path: Optional[str]
+    X_test_path: Optional[str]
+    y_train_path: Optional[str]
+    y_test_path: Optional[str]
 
 
 class AutoMLAgent:
@@ -139,8 +142,8 @@ class AutoMLAgent:
             # ── FIX: only auto-detect problem type if not already set by orchestrator ──
             problem_type = state.get('problem_type')
             if not problem_type:
-                target_data = state['data'][target_col]
-                if pd.api.types.is_numeric_dtype(target_data) and target_data.nunique() > 20:
+                target_sample = state['data'][target_col].head(1000)
+                if pd.api.types.is_numeric_dtype(target_sample) and target_sample.nunique() > 20:
                     problem_type = 'regression'
                 else:
                     problem_type = 'classification'
@@ -263,7 +266,10 @@ class AutoMLAgent:
         try:
             logger.info("[Model Selection Agent] Starting selection using external directives")
             # Retrieve data_summary from state if needed
-            data_summary = state.get('data_summary', {})
+            data_summary = state.get('data_summary') or {
+                "data_info": {"rows": 0},
+                "feature_info": {"total_features": 0}
+            }
             # 1. Retrieve the directives from the shared state
             directives = state.get('automl_directives', {})
             task_type = state.get('problem_type') or directives.get('task_type')
@@ -349,18 +355,22 @@ class AutoMLAgent:
 
     def training_agent(self, state: AgentState) -> AgentState:
         """
-        Deep Agent: Training Subagent with Confusion Matrix Support.
+        Deep Agent: Training Subagent integrating Dask for memory management
+        and Optuna for hyperparameter tuning.
         """
         try:
+            import dask.dataframe as dd
+            from sklearn.metrics import confusion_matrix
+            
             use_automl = state.get('use_automl', False)
             model_selection_reasoning = state.get('model_selection_reasoning', '')
             
             if use_automl:
                 logger.info("[Training Agent] Executing AutoGluon training strategy")
             else:
-                logger.info("[Training Agent] Executing simple training strategy")
+                logger.info("[Training Agent] Executing simple training strategy with Optuna")
             
-            # --- LLM strategy assessment block (kept your style) ---
+            # --- LLM strategy assessment block ---
             try:
                 training_strategy_prompt = f"Assess this strategy: {'AutoGluon' if use_automl else 'Simple'}. Reasoning: {model_selection_reasoning[:500]}"
                 strategy_messages = [
@@ -371,55 +381,67 @@ class AutoMLAgent:
                 training_insight = strategy_response.content
             except Exception as e:
                 training_insight = "Executing training strategy..."
-            
-            # 1. LOAD AND COERCE DATA TYPES
-            data = state['data'].copy()
-            target_column = state['target_column']
+
+            # 1. LOAD PRE-SPLIT DATA
+            # We enforce that these paths exist per the pipeline architecture
+            if not all([state.get('X_train_path'), state.get('X_test_path'), state.get('y_train_path'), state.get('y_test_path')]):
+                raise ValueError("Pre-split datasets missing from AgentState. AutoMLAgent must receive these from the Orchestrator.")
+
+            import os
+            # Train Set Load
+            if os.path.getsize(state["X_train_path"]) > 500_000_000:
+                X_train = dd.read_csv(state["X_train_path"]).compute()
+                y_train = dd.read_csv(state["y_train_path"]).compute().squeeze()
+            else:
+                X_train = pd.read_csv(state["X_train_path"])
+                y_train = pd.read_csv(state["y_train_path"]).squeeze()
+
+            # Test Set Load
+            if os.path.getsize(state["X_test_path"]) > 500_000_000:
+                X_test = dd.read_csv(state["X_test_path"]).compute()
+                y_test = dd.read_csv(state["y_test_path"]).compute().squeeze()
+            else:
+                X_test  = pd.read_csv(state["X_test_path"])
+                y_test  = pd.read_csv(state["y_test_path"]).squeeze()
+
+            # 2. VALIDATE INTEGRITY
+            if len(X_train) != len(y_train):
+                raise ValueError("X_train and y_train size mismatch")
+            if len(X_test) != len(y_test):
+                raise ValueError("X_test and y_test size mismatch")
+
             problem_type = state['problem_type']
-            
-                        # Ensure Dask compatibility
-            if not isinstance(data, dd.DataFrame):
-                data = dd.from_pandas(data, npartitions=10)
 
-            X = data.drop(columns=[target_column])
-            y = data[target_column]
-
-            # Convert all columns to numeric where possible
-            X = X.map_partitions(lambda df: df.apply(pd.to_numeric, errors="coerce"))
-            y = dd.to_numeric(y, errors="coerce")
-
-            # Convert to pandas before sklearn/AutoGluon
-            if hasattr(X, "compute"):
-                X = X.compute()
-            if hasattr(y, "compute"):
-                y = y.compute()
-
-            # Drop rows where target is missing
-            valid_idx = ~y.isna()
-            X = X.loc[valid_idx]
-            y = y.loc[valid_idx]
-
-            # # FORCE Target to numeric for Regression
-            # if state['problem_type'] == 'regression':
-            #     data[target_column] = pd.to_numeric(data[target_column], errors='coerce')
-            #     # Drop rows where target coercion failed (e.g. if there were actual strings)
-            #     data = data.dropna(subset=[target_column])
-
-            # X = data.drop(columns=[target_column])
-            # # Automatically convert any other 'object' columns to numeric if possible
-            # # This handles features that were also loaded as strings
-            # for col in X.select_dtypes(include=['object']).columns:
-            #     X[col] = pd.to_numeric(X[col], errors='ignore')
+            # FORCE Target to numeric for Regression if needed
+            if problem_type == 'regression':
+                y_train = pd.to_numeric(y_train, errors='coerce')
+                y_test  = pd.to_numeric(y_test, errors='coerce')
                 
-            X_encoded = pd.get_dummies(X, drop_first=True)
-            # y = data[target_column]
+                # Drop NAs
+                valid_train = ~y_train.isna()
+                valid_test  = ~y_test.isna()
+                X_train = X_train.loc[valid_train]
+                y_train = y_train.loc[valid_train]
+                X_test  = X_test.loc[valid_test]
+                y_test  = y_test.loc[valid_test]
 
-            # Split data here to ensure we have test labels for the confusion matrix
-            from sklearn.model_selection import train_test_split
-            from sklearn.metrics import confusion_matrix
-            X_train, X_test, y_train, y_test = train_test_split(X_encoded, y, test_size=0.2, random_state=42)
+            # Convert 'object' columns to numeric where possible, then dummy encode
+            for col in X_train.select_dtypes(include=['object']).columns:
+                X_train[col] = pd.to_numeric(X_train[col], errors='coerce')
+            for col in X_test.select_dtypes(include=['object']).columns:
+                X_test[col] = pd.to_numeric(X_test[col], errors='coerce')
 
-            # ── AutoGluon ──
+            X_train = X_train.fillna(0)
+            X_test = X_test.fillna(0)
+
+            X_train = pd.get_dummies(X_train, drop_first=True)
+            X_test  = pd.get_dummies(X_test, drop_first=True)
+            
+            # Align columns so both have exactly the same features
+            X_train, X_test = X_train.align(X_test, join='outer', axis=1, fill_value=0)
+            X_test = X_test[X_train.columns]
+
+            # 3. TRAINING ROUTING
             if use_automl:
                 automl_config = state.get('automl_config', {})
 
@@ -427,26 +449,11 @@ class AutoMLAgent:
                 trained_model, metrics = self._train_with_autogluon(
                     X_train, y_train, problem_type, automl_config
                 )
-                # y_pred = trained_model.predict(X_test)
-
-                                # Safe prediction handling
-                if hasattr(trained_model, 'feature_names_in_'):
-                    seen_cols = list(trained_model.feature_names_in_)
-                    X_test_pre = X_test.reindex(columns=seen_cols, fill_value=0)
-                    y_pred = trained_model.predict(X_test_pre)
-                else:
-                    y_pred = trained_model.predict(X_test)
-
+                y_pred = trained_model.predict(X_test)
             else:
                 selected_models = state.get('selected_models', []) or ['RandomForest']
-                # trained_model, metrics = self._train_simple_models(X, y, problem_type, selected_models)
-                trained_model, metrics = self._train_simple_models(X_train, y_train, state['problem_type'], selected_models)
-                # Simple models use scikit-learn predict
-                # X_test_simple = pd.get_dummies(X_test, drop_first=True)
-                # # Re-align columns in case dummies changed
-                # X_test_simple = X_test_simple.reindex(columns=pd.get_dummies(X_train, drop_first=True).columns, fill_value=0)
-                # y_pred = trained_model.predict(X_test_simple)
-
+                trained_model, metrics = self._train_simple_models(X_train, X_test, y_train, y_test, state['problem_type'], selected_models)
+                
                 if hasattr(trained_model, 'feature_names_in_'):
                     seen_cols = list(trained_model.feature_names_in_)
                     X_test_aligned = X_test.reindex(columns=seen_cols, fill_value=0)
@@ -454,21 +461,10 @@ class AutoMLAgent:
                     X_test_aligned = X_test
 
                 y_pred = trained_model.predict(X_test_aligned)
-
-                # y_pred = trained_model.predict(X_test)
             
             # --- FIX: ADD CONFUSION MATRIX ---
             if problem_type == 'classification':
-                # cm = confusion_matrix(y_test, y_pred)
-                if len(y_test) > 50_000:
-                    sample_idx = y_test.sample(n=50_000, random_state=42).index
-                    cm = confusion_matrix(
-                        y_test.loc[sample_idx],
-                        pd.Series(y_pred, index=y_test.index).loc[sample_idx]
-                    )
-                else:
-                    cm = confusion_matrix(y_test, y_pred)
-
+                cm = confusion_matrix(y_test, y_pred)
                 metrics['confusion_matrix'] = cm.tolist() # Save as list for JSON/Markdown compatibility
                 logger.info(f"[Training Agent] Confusion Matrix generated: {metrics['confusion_matrix']}")
 
@@ -700,14 +696,14 @@ Provide your analysis and decision:
                     selected_models = default_models.get(problem_type, ['RandomForest'])
         
         return use_automl, automl_config, selected_models[:3]
-    def _train_with_autogluon(self, X: pd.DataFrame, y: pd.Series, problem_type: str, config: dict) -> tuple:
+    def _train_with_autogluon(self, X_train: pd.DataFrame, y_train: pd.Series, problem_type: str, config: dict) -> tuple:
         """
         Train model using AutoGluon AutoML framework with LLM-recommended configuration.
         AutoGluon will automatically select the best model after training.
         
         Args:
-            X: Feature DataFrame
-            y: Target Series
+            X_train: Training Feature DataFrame
+            y_train: Training Target Series
             problem_type: 'classification' or 'regression'
             config: Dictionary with 'models', 'time_limit', 'preset' keys
         
@@ -719,33 +715,31 @@ Provide your analysis and decision:
             
             logger.info(f"Initializing AutoGluon predictor with config: {config}")
             
-            rows, features = X.shape
+            rows, features = X_train.shape
             # --- Large-scale handling ---
             if rows > 1_000_000 or features > 500:
                 # Sample 1–5% of data for AutoML to avoid memory issues
                 frac = min(0.05, 500_000 / rows)
-                X_sample = X.sample(frac=frac, random_state=42)
-                y_sample = y.loc[X_sample.index]
+                sample_idx = X_train.sample(frac=frac, random_state=42).index
+                X_sample = X_train.loc[sample_idx]
+                y_sample = y_train.loc[sample_idx]
                 logger.info(f"[AutoGluon] Large dataset detected ({rows} rows, {features} features). Sampling {len(X_sample)} rows for training.")
             else:
-                X_sample, y_sample = X, y
+                X_sample, y_sample = X_train, y_train
 
             # Prepare data with target column
-            train_data = X.copy()
+            train_data = X_sample.copy()
             target_col_name = 'target'
-            train_data[target_col_name] = y
+            train_data[target_col_name] = y_sample
             
             # Map problem type to AutoGluon's expected format
             # AutoGluon expects 'binary', 'multiclass', or 'regression'
             ag_problem_type = problem_type
             if problem_type == 'classification':
                 # Determine if binary or multiclass based on target values
-                unique_targets = y.nunique()
-                if unique_targets == 2:
-                    ag_problem_type = 'binary'
-                else:
-                    ag_problem_type = 'multiclass'
-                logger.info(f"Mapped 'classification' to '{ag_problem_type}' ({unique_targets} classes)")
+                unique_targets = y_train.nunique()
+                ag_problem_type = 'binary' if unique_targets <= 2 else 'multiclass'
+                logger.info(f"Mapped {problem_type} to {ag_problem_type} ({unique_targets} classes)")
             
             # Create a unique path for this predictor to avoid conflicts
             # import tempfile
@@ -826,10 +820,6 @@ Provide your analysis and decision:
                 # DISABLE DYNAMIC STACKING: Prevents the sub-fits that trigger Ray
                 'dynamic_stacking': False,
                 # REDUCE MODEL COMPLEXITY: Limit to lighter models if needed
-                'hyperparameters': {
-                    'GBM': {},  # LightGBM is generally memory efficient
-                    'XGB': {},
-                },
                 # SAVE MEMORY: Delete intermediate data after fit
                 'save_space': True
             }
@@ -869,13 +859,11 @@ Provide your analysis and decision:
         except ImportError:
             logger.warn("AutoGluon not available, falling back to simple training...")
             # Fallback to simple training with first recommended model
-            fallback_models = config.get('models', ['RandomForest'])
-            return self._train_simple_models(X, y, problem_type, [fallback_models[0]] if fallback_models else ['RandomForest'])
+            raise Exception("AutoGluon failed and simple_models fallback requires passing pre-split test sizes, which is handled at the training_agent level, not from inside _train_with_autogluon anymore.")
         except Exception as e:
             logger.warn(f"AutoGluon training failed: {str(e)}, falling back to simple training...")
             # Fallback to simple training
-            fallback_models = config.get('models', ['RandomForest'])
-            return self._train_simple_models(X, y, problem_type, [fallback_models[0]] if fallback_models else ['RandomForest'])
+            raise e
 
     def _tune_with_optuna(self, X_train, X_test, y_train, y_test, problem_type: str, model_name: str, n_trials: int = 30):
         """
@@ -979,13 +967,12 @@ Provide your analysis and decision:
         best_score = study.best_value
 
         return best_model, best_score, best_params, study
-    def _train_simple_models(self, X: pd.DataFrame, y: pd.Series, problem_type: str, model_names: list[str]) -> tuple:
+    def _train_simple_models(self, X_train: pd.DataFrame, X_test: pd.DataFrame, y_train: pd.Series, y_test: pd.Series, problem_type: str, model_names: list[str]) -> tuple:
         """
         Train models using simple scikit-learn approach with LLM-selected models.
         Optuna is used for hyperparameter tuning for each model.
         """
         import optuna
-        from sklearn.model_selection import train_test_split
         from sklearn.ensemble import (RandomForestClassifier, RandomForestRegressor,
                                     GradientBoostingClassifier, GradientBoostingRegressor)
         from sklearn.linear_model import LogisticRegression, LinearRegression
@@ -1001,22 +988,17 @@ Provide your analysis and decision:
             logger.warn("XGBoost not available, will use GradientBoosting as alternative")
 
 
-        if X.shape[0] > 1_000_000 or X.shape[1] > 500:
-            frac = min(0.05, 500_000 / X.shape[0])  # max 500k rows
-            X = X.sample(frac=frac, random_state=42)
-            y = y.loc[X.index]
-            logger.info(f"[Simple Models] Large dataset detected. Sampling {len(X)} rows for training.")
+        if X_train.shape[0] > 1_000_000 or X_train.shape[1] > 500:
+            frac = min(0.05, 500_000 / X_train.shape[0])  # max 500k rows
+            X_train = X_train.sample(frac=frac, random_state=42)
+            y_train = y_train.loc[X_train.index]
+            logger.info(f"[Simple Models] Large dataset detected. Sampling {len(X_train)} rows for training.")
 
         # Ensure we have a valid list to iterate over
         if not model_names or not isinstance(model_names, list):
             model_names = ['RandomForest', 'GradientBoosting'] if problem_type == 'classification' else ['RandomForest']
 
         logger.info(f"Training simple models with Optuna HPO: {model_names}")
-
-        X_processed = pd.get_dummies(X, drop_first=True)
-        X_train, X_test, y_train, y_test = train_test_split(
-            X_processed, y, test_size=0.2, random_state=42
-        )
 
         best_metric_name = 'accuracy' if problem_type == 'classification' else 'r2_score'
 
@@ -1406,7 +1388,8 @@ Provide your analysis and decision:
         return saved_paths
     
     # AFTER
-    def run(self, data_path: str, target_column: str = None, output_dir: str = "outputs", automl_directives: dict = None, problem_type: str = None) -> dict:
+    def run(self, data_path: str, target_column: str = None, output_dir: str = "outputs", automl_directives: dict = None, problem_type: str = None,
+            X_train_path: str = None, X_test_path: str = None, y_train_path: str = None, y_test_path: str = None) -> dict:
         """
         Run the complete AutoML workflow.
 
@@ -1426,20 +1409,23 @@ Provide your analysis and decision:
         'target_column': target_column,
         'data': None,
         'data_summary': None,
-        'problem_type': problem_type,           # ← was None hardcoded, now uses argument
+        'problem_type': problem_type,
         'use_automl': None,
         'automl_config': None,
         'selected_models': None,
         'reasoning': None,
-        'data_analysis_reasoning': None,
         'model_selection_reasoning': None,
         'trained_model': None,
         'model_metrics': None,
         'error': None,
         'step': 'initialized',
         'agent_messages': [],
-        'automl_directives': automl_directives, # ← NEW
+        'automl_directives': automl_directives,
         'human_approved': None,
+        'X_train_path': X_train_path,
+        'X_test_path': X_test_path,
+        'y_train_path': y_train_path,
+        'y_test_path': y_test_path,
     }
         logger.info("Starting AutoML agent workflow")
         final_state = self.graph.invoke(initial_state)

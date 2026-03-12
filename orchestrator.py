@@ -18,6 +18,10 @@ class AgentState(TypedDict):
     """Shared pipeline memory."""
     data_path: str
     clean_data_path: str
+    X_train_path: Optional[str]
+    X_test_path: Optional[str]
+    y_train_path: Optional[str]
+    y_test_path: Optional[str]
     target_column: str
     task_type: str
     analysis_report_path: Optional[str]
@@ -94,6 +98,11 @@ class DTDPipeline:
             return state
 
         state["clean_data_path"] = result_state["full_dataset_path"]
+        state["X_train_path"] = result_state["X_train_path"]
+        state["X_test_path"] = result_state["X_test_path"]
+        state["y_train_path"] = result_state["y_train_path"]
+        state["y_test_path"] = result_state["y_test_path"]
+
         state["agent_output"] = {
             "stage":          "preprocessing",
             "X_train":        result_state["X_train_path"],
@@ -161,7 +170,11 @@ class DTDPipeline:
                 target_column     = target_col,
                 output_dir        = "Output/automl",
                 automl_directives = directives,
-                problem_type      = task_type
+                problem_type      = task_type,
+                X_train_path      = state.get("X_train_path"),
+                X_test_path       = state.get("X_test_path"),
+                y_train_path      = state.get("y_train_path"),
+                y_test_path       = state.get("y_test_path"),
             )
 
             # 5. Capture results back into orchestrator state
