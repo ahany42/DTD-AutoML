@@ -256,13 +256,14 @@ class AutoMLAgent:
         
     #     return state
     
-    def model_selection_agent(self,data_summary: dict, state: AgentState) -> AgentState:
+    def model_selection_agent(self, state: AgentState) -> AgentState:
         """
         Model Selection Subagent that depends on external Analysis Agent directives.
         """
         try:
             logger.info("[Model Selection Agent] Starting selection using external directives")
-            
+            # Retrieve data_summary from state if needed
+            data_summary = state.get('data_summary', {})
             # 1. Retrieve the directives from the shared state
             directives = state.get('automl_directives', {})
             task_type = state.get('problem_type') or directives.get('task_type')
@@ -316,7 +317,7 @@ class AutoMLAgent:
             
             # 5. Parse and update state
             use_automl, automl_config, selected_models = self._parse_automl_decision(
-                reasoning, state.get('data_summary', {}), task_type
+                reasoning, data_summary, task_type
             )
             
             state['model_selection_reasoning'] = reasoning

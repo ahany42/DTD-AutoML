@@ -7,6 +7,7 @@ from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.responses import StreamingResponse
 from bson import ObjectId
 from pymongo import MongoClient
+
 from orchestrator import DTDPipeline
 from dotenv import load_dotenv
 
@@ -31,6 +32,26 @@ db = client[MONGO_DB]  # now points to your "test" DB in the "AUTH" project
 
 reports_collection = db["reports"]  # collection inside test
 print("Connected to MongoDB database:", MONGO_DB)
+from fastapi.responses import FileResponse
+
+# @app.get("/download-model/{report_id}")
+# async def download_model(report_id: str):
+#     # 1. Look up the report in Mongo to find the file path
+#     report = reports_collection.find_one({"_id": ObjectId(report_id)})
+    
+#     if not report or "model_path" not in report.get("report", {}).get("autom_ml", {}):
+#         return {"error": "Model file not found for this report"}
+
+#     file_path = report["report"]["autom_ml"]["model_path"]
+    
+#     # 2. Return the file as a download
+#     if os.path.exists(file_path):
+#         return FileResponse(
+#             path=file_path, 
+#             filename=f"model_{report_id}.pkl", 
+#             media_type='application/octet-stream'
+#         )
+#     return {"error": "File missing on server"}
 
 @app.post("/run-pipeline/{dataset_id}/{report_id}")
 async def run_pipeline(
