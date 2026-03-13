@@ -16,6 +16,7 @@ __pycache__/
 logs/
 assets/logs/
 *.log
+
 # logs
 assets/logs/
 **/*.log
