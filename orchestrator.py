@@ -1,3 +1,4 @@
+from importlib.resources import path
 import os
 import pandas as pd
 from typing import TypedDict, Optional
@@ -36,6 +37,9 @@ class DTDPipeline:
     def __init__(self):
         self.workflow = self._build_graph()
 
+    def _get_dataset_name(self, path: str) -> str:
+        return os.path.splitext(os.path.basename(path))[0]
+
     def _build_graph(self):
         builder = StateGraph(AgentState)
 
@@ -61,9 +65,9 @@ class DTDPipeline:
         print("🔍 [Stage 1] Running Raw Data Analysis...")
 
         df    = pd.read_csv(state['data_path'])
-        agent = EDAAgent(df, target_column=state['target_column'], df_name="raw_data")
+        agent = EDAAgent(df, target_column=state['target_column'], df_name=self._get_dataset_name(state['data_path']))
         agent.run(run_type="raw")
-        results = agent.export(output_dir="Output/raw")
+        results = agent.export(output_dir="Output")
 
         frontend_json_path = results.get("frontend_json_path")
         with open(frontend_json_path, 'r', encoding='utf-8') as f:
@@ -123,9 +127,9 @@ class DTDPipeline:
         print("📊 [Stage 3] Running Post-Prep Analysis...")
 
         df    = pd.read_csv(state['clean_data_path'], low_memory=False)
-        agent = EDAAgent(df, target_column=state['target_column'], df_name="clean_data")
+        agent = EDAAgent(df, target_column=state['target_column'], df_name=self._get_dataset_name(state['clean_data_path']))
         agent.run(run_type="clean")
-        results = agent.export(output_dir="Output/clean")
+        results = agent.export(output_dir="Output")
 
         state['automl_directives'] = results.get("automl_context")
 
