@@ -1,0 +1,36 @@
+{
+  "run_timestamp": "20260312_042213",
+  "data_path": "Output/Preprocessing/full_preprocessed.csv",
+  "target_column": "Survived",
+  "problem_type": "classification",
+  "model_selection": {
+    "use_automl": true,
+    "automl_config": {
+      "models": [
+        "GBM",
+        "XGB"
+      ],
+      "time_limit": 300,
+      "preset": "best_quality"
+    },
+    "selected_models": [],
+    "model_selection_reasoning": "```json\n{\n  \"approach\": \"AutoGluon\",\n  \"reasoning\": \"The task is classification. Crucially, the 'Feature Strengths' analysis is empty, providing no specific information about the linearity or complexity of the signals within the dataset. In the absence of clear indicators for simple, linear relationships, AutoGluon is the most robust choice. It automatically explores a wide range of models (including tree-based, neural networks, and linear models) and ensembles them, making it highly effective at capturing both linear and non-linear patterns without requiring explicit guidance on signal complexity. This minimizes the risk of underfitting if the underlying signals are indeed complex or non-linear, which is common in real-world classification problems.\",\n  \"autogluon_settings\": {\n    \"models_to_prioritize\": [\"GBM\", \"XGB\"],\n    \"time_limit_seconds\": 300,\n    \"preset_mode\": \"best_quality\"\n  },\n  \"simple_models\": [\"RandomForest\", \"XGBoost\", \"LogisticRegression\"]\n}\n```"
+  },
+  "training_results": {
+    "training_method": null,
+    "best_model": null,
+    "best_score": null,
+    "metric_name": "score",
+    "models_trained": null,
+    "all_models": [],
+    "all_scores": [],
+    "confusion_matrix": null,
+    "best_params_per_model": {},
+    "optuna_refined_config": null
+  },
+  "agent_messages": [],
+  "workflow": {
+    "final_step": "error",
+    "error": "Failed to train model: No module named 'dask'"
+  }
+}

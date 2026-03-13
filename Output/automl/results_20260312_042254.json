@@ -1,0 +1,36 @@
+{
+  "run_timestamp": "20260312_042254",
+  "data_path": "Output/Preprocessing/full_preprocessed.csv",
+  "target_column": "Survived",
+  "problem_type": "classification",
+  "model_selection": {
+    "use_automl": true,
+    "automl_config": {
+      "models": [
+        "GBM",
+        "XGB"
+      ],
+      "time_limit": 300,
+      "preset": "best_quality"
+    },
+    "selected_models": [],
+    "model_selection_reasoning": "```json\n{\n  \"approach\": \"AutoGluon\",\n  \"reasoning\": \"The provided signal analysis lacks specific information regarding feature strengths and the linearity of signals (Feature Strengths: {}). In the absence of explicit indicators for simple linear relationships, it is prudent to assume potential complexity or non-linearity in the data. AutoGluon is designed to excel in scenarios with high complexity or non-linear signals by automatically exploring a wide range of models, performing hyperparameter tuning, and ensembling them. This approach minimizes the risk of underfitting if the underlying relationships are indeed complex, and it handles various data types and potential interactions more robustly than a simple training approach without explicit guidance on signal characteristics. The empty 'Recommended Encodings' also suggests that AutoGluon's automatic feature handling capabilities would be beneficial.\",\n  \"autogluon_settings\": {\n    \"models_to_prioritize\": [\"GBM\", \"XGB\"],\n    \"time_limit_seconds\": 300,\n    \"preset_mode\": \"best_quality\"\n  },\n  \"simple_models\": []\n}\n```"
+  },
+  "training_results": {
+    "training_method": null,
+    "best_model": null,
+    "best_score": null,
+    "metric_name": "score",
+    "models_trained": null,
+    "all_models": [],
+    "all_scores": [],
+    "confusion_matrix": null,
+    "best_params_per_model": {},
+    "optuna_refined_config": null
+  },
+  "agent_messages": [],
+  "workflow": {
+    "final_step": "error",
+    "error": "Failed to train model: invalid error value specified"
+  }
+}

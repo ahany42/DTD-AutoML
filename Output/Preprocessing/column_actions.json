@@ -1,67 +1,73 @@
 {
   "PassengerId": {
     "action": "drop",
-    "reason": "default_policy"
+    "reason": "id_like_numeric"
   },
   "Pclass": {
     "type": "numeric",
-    "missing": "median",
-    "outlier": "keep",
-    "encoding": "none",
-    "reason": "default_policy"
+    "imputation": "median",
+    "imputation_value": 3.0,
+    "encoding": null
   },
   "Name": {
     "action": "drop",
-    "reason": "default_policy"
+    "reason": "high_cardinality_ratio>1.00"
   },
   "Sex": {
     "type": "categorical",
-    "missing": "mode",
+    "imputation": "missing",
     "encoding": "label",
-    "reason": "default_policy"
+    "mapping": {
+      "female": 0,
+      "male": 1
+    },
+    "reason": "low_cardinality_categorical",
+    "llm_used": false
   },
   "Age": {
     "type": "numeric",
-    "missing": "median",
-    "outlier": "keep",
-    "encoding": "none",
-    "reason": "default_policy"
+    "imputation": "median",
+    "imputation_value": 28.0,
+    "encoding": null
   },
   "SibSp": {
     "type": "numeric",
-    "missing": "median",
-    "outlier": "keep",
-    "encoding": "none",
-    "reason": "default_policy"
+    "imputation": "median",
+    "imputation_value": 0.0,
+    "encoding": null
   },
   "Parch": {
     "type": "numeric",
-    "missing": "median",
-    "outlier": "keep",
-    "encoding": "none",
-    "reason": "default_policy"
+    "imputation": "median",
+    "imputation_value": 0.0,
+    "encoding": null
   },
   "Ticket": {
-    "type": "categorical",
-    "missing": "mode",
-    "encoding": "hash",
-    "reason": "default_policy"
+    "action": "drop",
+    "reason": "high_cardinality_categorical",
+    "llm_used": false
   },
   "Fare": {
     "type": "numeric",
-    "missing": "median",
-    "outlier": "keep",
-    "encoding": "none",
-    "reason": "default_policy"
+    "imputation": "median",
+    "imputation_value": 14.4542,
+    "encoding": null
   },
   "Cabin": {
     "action": "drop",
-    "reason": "default_policy"
+    "reason": "missing_ratio>0.77"
   },
   "Embarked": {
     "type": "categorical",
-    "missing": "mode",
+    "imputation": "missing",
     "encoding": "label",
-    "reason": "default_policy"
+    "mapping": {
+      "C": 0,
+      "Q": 1,
+      "S": 2,
+      "missing": 3
+    },
+    "reason": "low_cardinality_categorical",
+    "llm_used": false
   }
 }

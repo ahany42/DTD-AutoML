@@ -1,0 +1,62 @@
+{
+  "run_timestamp": "20260312_043546",
+  "data_path": "Output/Preprocessing/full_preprocessed.csv",
+  "target_column": "Survived",
+  "problem_type": "classification",
+  "model_selection": {
+    "use_automl": true,
+    "automl_config": {
+      "models": [
+        "GBM",
+        "XGB"
+      ],
+      "time_limit": 300,
+      "preset": "best_quality"
+    },
+    "selected_models": [],
+    "model_selection_reasoning": "```json\n{\n  \"approach\": \"AutoGluon\",\n  \"reasoning\": \"The 'Feature Strengths' analysis is empty, providing no specific insights into the linearity or complexity of the signals. In the absence of clear indicators for simple, linear relationships, AutoGluon is the more robust choice. It is designed to automatically discover and leverage complex, non-linear patterns and optimize model performance across a wide range of algorithms and hyperparameters, making it suitable when signal characteristics are unknown or potentially complex. This approach minimizes the risk of underfitting by assuming simplicity prematurely.\",\n  \"autogluon_settings\": {\n    \"models_to_prioritize\": [\n      \"GBM\",\n      \"XGB\"\n    ],\n    \"time_limit_seconds\": 300,\n    \"preset_mode\": \"best_quality\"\n  },\n  \"simple_models\": [\n    \"RandomForest\",\n    \"XGBoost\",\n    \"LogisticRegression\"\n  ]\n}\n```"
+  },
+  "training_results": {
+    "training_method": "Simple+Optuna",
+    "best_model": "GBM",
+    "best_score": 0.938375350140056,
+    "metric_name": "accuracy",
+    "models_trained": 1,
+    "all_models": [
+      "GBM"
+    ],
+    "all_scores": [
+      0.938375350140056
+    ],
+    "confusion_matrix": [
+      [
+        217,
+        8
+      ],
+      [
+        14,
+        118
+      ]
+    ],
+    "best_params_per_model": {
+      "GBM": {
+        "n_estimators": 471,
+        "learning_rate": 0.029768940211344106,
+        "max_depth": 9,
+        "subsample": 0.900062174318088,
+        "max_features": "sqrt"
+      }
+    },
+    "optuna_refined_config": null
+  },
+  "agent_messages": [
+    {
+      "agent": "training",
+      "message": "Training complete. Training completed. Best score: 0.9384"
+    }
+  ],
+  "workflow": {
+    "final_step": "model_trained",
+    "error": null
+  }
+}
