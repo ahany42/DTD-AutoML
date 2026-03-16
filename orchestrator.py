@@ -251,10 +251,10 @@ class DTDPipeline:
                 output_dir="Output/automl",
                 automl_directives=directives,
                 problem_type=task_type,
-                X_train_path=state.get("X_train_path"),
-                X_test_path=state.get("X_test_path"),
-                y_train_path=state.get("y_train_path"),
-                y_test_path=state.get("y_test_path"),
+                # X_train_path=state.get("X_train_path"),
+                # X_test_path=state.get("X_test_path"),
+                # y_train_path=state.get("y_train_path"),
+                # y_test_path=state.get("y_test_path"),
             )
 
             # 5. Capture results back into orchestrator state
