@@ -14,7 +14,7 @@
     },
     {
       "title": "Timestamp",
-      "value": "2026-03-16T04:40:22.042899"
+      "value": "2026-03-16T05:41:56.452048"
     }
   ],
   "summary": [
@@ -28,38 +28,7 @@
     },
     {
       "title": "Column Types",
-      "value": [
-        {
-          "title": "Numerical",
-          "value": [
-            "PassengerId",
-            "Survived",
-            "Pclass",
-            "Age",
-            "SibSp",
-            "Parch",
-            "Fare"
-          ]
-        },
-        {
-          "title": "Categorical",
-          "value": [
-            "Name",
-            "Sex",
-            "Ticket",
-            "Cabin",
-            "Embarked"
-          ]
-        },
-        {
-          "title": "Datetime",
-          "value": []
-        },
-        {
-          "title": "Boolean",
-          "value": []
-        }
-      ]
+      "value": "Numerical: PassengerId, Survived, Pclass, Age, SibSp, Parch, Fare, Categorical: Name, Sex, Ticket, Cabin, Embarked, Datetime: , Boolean: "
     },
     {
       "title": "Memory Usage Mb",
@@ -81,25 +50,15 @@
   "feature_scale_analysis": [
     {
       "title": "Wide Scale Features",
-      "value": [
-        "PassengerId"
-      ]
+      "value": "PassengerId"
     },
     {
       "title": "Heavy Tailed Features",
-      "value": [
-        "SibSp",
-        "Parch",
-        "Fare"
-      ]
+      "value": "SibSp, Parch, Fare"
     },
     {
       "title": "Approximately Standard Scale Features",
-      "value": [
-        "Pclass",
-        "SibSp",
-        "Parch"
-      ]
+      "value": "Pclass, SibSp, Parch"
     }
   ],
   "target_analysis": [
@@ -172,170 +131,49 @@
   "data_quality": [
     {
       "title": "Missing Values",
-      "value": [
-        {
-          "title": "Total Missing Cells",
-          "value": 866
-        },
-        {
-          "title": "Columns With Missing",
-          "value": [
-            {
-              "title": "Age",
-              "value": [
-                {
-                  "title": "Missing Count",
-                  "value": 177
-                },
-                {
-                  "title": "Missing Ratio",
-                  "value": 0.1987
-                }
-              ]
-            },
-            {
-              "title": "Cabin",
-              "value": [
-                {
-                  "title": "Missing Count",
-                  "value": 687
-                },
-                {
-                  "title": "Missing Ratio",
-                  "value": 0.771
-                }
-              ]
-            },
-            {
-              "title": "Embarked",
-              "value": [
-                {
-                  "title": "Missing Count",
-                  "value": 2
-                },
-                {
-                  "title": "Missing Ratio",
-                  "value": 0.0022
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "title": "N Columns With Missing",
-          "value": 3
-        }
-      ]
+      "value": "Total Missing Cells: 866, Columns With Missing: Age: Missing Count: 177, Missing Ratio: 0.1987, Cabin: Missing Count: 687, Missing Ratio: 0.771, Embarked: Missing Count: 2, Missing Ratio: 0.0022, N Columns With Missing: 3"
     },
     {
       "title": "Duplicates",
-      "value": [
-        {
-          "title": "Duplicate Row Count",
-          "value": 0
-        },
-        {
-          "title": "Duplicate Ratio",
-          "value": 0.0
-        }
-      ]
+      "value": "Duplicate Row Count: 0, Duplicate Ratio: 0.0"
     },
     {
       "title": "Low Variance Columns",
-      "value": [
-        {
-          "title": "Constant Columns",
-          "value": []
-        },
-        {
-          "title": "Near Constant Columns",
-          "value": []
-        }
-      ]
+      "value": "Constant Columns: , Near Constant Columns: "
     },
     {
       "title": "Unique Per Row Columns",
-      "value": [
-        "PassengerId",
-        "Name"
-      ]
+      "value": "PassengerId, Name"
     },
     {
       "title": "Type Issues",
-      "value": [
-        {
-          "title": "Mixed Type Columns",
-          "value": []
-        }
-      ]
+      "value": "Mixed Type Columns: "
     }
   ],
   "relationships": [
     {
-      "title": "Numeric Correlations",
-      "value": [
-        {
-          "title": "Threshold",
-          "value": 0.5
-        },
-        {
-          "title": "Strong Pairs",
-          "value": [
-            [
-              {
-                "title": "Feature 1",
-                "value": "Pclass"
-              },
-              {
-                "title": "Feature 2",
-                "value": "Fare"
-              },
-              {
-                "title": "Correlation",
-                "value": -0.549
-              }
-            ]
-          ]
-        }
-      ]
+      "title": "Pclass",
+      "value": 0.338
     },
     {
-      "title": "Target Relationships",
-      "value": [
-        {
-          "title": "Target Type",
-          "value": "numeric"
-        },
-        {
-          "title": "Feature Correlations",
-          "value": [
-            {
-              "title": "Passengerid",
-              "value": -0.005
-            },
-            {
-              "title": "Pclass",
-              "value": -0.338
-            },
-            {
-              "title": "Age",
-              "value": -0.077
-            },
-            {
-              "title": "Sibsp",
-              "value": -0.035
-            },
-            {
-              "title": "Parch",
-              "value": 0.082
-            },
-            {
-              "title": "Fare",
-              "value": 0.257
-            }
-          ]
-        }
-      ]
+      "title": "Fare",
+      "value": 0.257
+    },
+    {
+      "title": "Parch",
+      "value": 0.082
+    },
+    {
+      "title": "Age",
+      "value": 0.077
+    },
+    {
+      "title": "SibSp",
+      "value": 0.035
+    },
+    {
+      "title": "PassengerId",
+      "value": 0.005
     }
   ],
   "columns": [
