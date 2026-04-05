@@ -35,6 +35,44 @@ from fastapi.responses import FileResponse
 # Create a global executor for heavy lifting
 executor = ThreadPoolExecutor(max_workers=5)
 
+import pandas as pd
+from fastapi import UploadFile, File
+from fastapi.responses import JSONResponse
+from agents.eda_agent.eda_agent import TargetSuggestionAgent
+
+@app.post("/suggest-target")
+async def suggest_target(file: UploadFile = File(...)):
+    print("Received file:", file.filename if file else "NO FILE")
+    try:
+        # Save temporarily (optional)
+        temp_path = UPLOAD_DIR / file.filename
+        with open(temp_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+
+        # Load dataset
+        if file.filename.endswith(".csv"):
+            df = pd.read_csv(temp_path)
+        elif file.filename.endswith((".xlsx", ".xls")):
+            df = pd.read_excel(temp_path)
+        elif file.filename.endswith(".json"):
+            df = pd.read_json(temp_path)
+        else:
+            return JSONResponse(
+                status_code=400,
+                content={"error": "Unsupported file format"}
+            )
+
+        agent = TargetSuggestionAgent(df)
+        result = agent.run()
+
+        return JSONResponse(content=result)
+
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(e)}
+        )
+
 @app.post("/run-pipeline/{dataset_id}/{report_id}")
 async def run_pipeline(
     dataset_id: str,
