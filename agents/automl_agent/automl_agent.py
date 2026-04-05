@@ -1,5 +1,9 @@
 
 import json
+from sklearn.model_selection import cross_val_score
+from sklearn.metrics import accuracy_score, precision_score, recall_score, roc_auc_score, f1_score
+from sklearn.dummy import DummyClassifier
+from sklearn.linear_model import LogisticRegression
 from typing import TypedDict, Annotated, Literal, Any, Optional
 from langgraph.graph import StateGraph, END
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -14,7 +18,6 @@ from dotenv import load_dotenv
 
 import dask.dataframe as dd
 from ray import state
-from sklearn.metrics import f1_score
 
 from src.utils.logger import Logger
 
@@ -1362,9 +1365,9 @@ Provide your analysis and decision:
                 "models_trained": metrics.get('models_trained'),
                 "all_models": metrics.get('all_models', []),
                 "all_scores": metrics.get('all_scores', []),
-                "confusion_matrix": metrics.get('confusion_matrix'),        # list of lists or None
+                "confusion_matrix": metrics.get('confusion_matrix'),       
                 "best_params_per_model": metrics.get('best_params_per_model', {}),
-                "optuna_refined_config": metrics.get('optuna_refined_config'),  # None if not used
+                "optuna_refined_config": metrics.get('optuna_refined_config'), 
             },
 
             # ── Agent conversation history ──
