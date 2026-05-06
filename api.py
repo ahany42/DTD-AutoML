@@ -162,7 +162,28 @@ async def run_pipeline(
         yield f"data: {json.dumps({'status': 'completed', 'reportId': report_id, 'datasetId': dataset_id})}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
+@app.post("/run-custom-pipeline/{dataset_id}/{report_id}")
+async def run_custom_pipeline(
+    dataset_id: str,
+    report_id: str,
+    file: UploadFile = File(...),
+    target_column: str = Form(...),
+    prompt: str = Form(...),
+):
+    # Save uploaded file
+    file_path = UPLOAD_DIR / file.filename
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
 
+    inputs = {
+        "data_path": str(file_path),
+        "target_column": target_column,
+        "dataset_id": dataset_id,
+        "report_id": report_id,
+        "prompt": prompt,
+    }
+    print("Received inputs for custom pipeline:", inputs)
+    
 if __name__ == "__main__":
     import uvicorn
     print("Starting API server...")
