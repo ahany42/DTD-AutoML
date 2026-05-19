@@ -1,4 +1,8 @@
-def run(task,tool_input,prompt,data_path):
+from langchain_core.tools import tool
+
+@tool
+def data_understanding(task,tool_input,prompt,data_path):
+    """Perform data understanding by analyzing the dataset to extract insights, identify patterns, and summarize key characteristics."""
     print("=========================================================================")
     print(f"[TOOL] Understanding data: {task}")
     print(f"[TOOL] Prompt: {prompt}")

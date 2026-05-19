@@ -1,4 +1,8 @@
-def run(task,tool_input,prompt,data_path):
+from langchain_core.tools import tool
+
+@tool
+def evaluate(task,tool_input,prompt,data_path):
+    """Evaluate the performance of a trained machine learning model using appropriate metrics and techniques."""
     print("=========================================================================")
     print(f"[TOOL] Evaluating model: {task}")
     print(f"[TOOL_INPUT] {tool_input}")

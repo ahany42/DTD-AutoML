@@ -13,17 +13,17 @@ load_dotenv(PROJECT_ROOT / ".env")
 #tools
 from tools.registry import ToolRegistry
 
-from tools.data_understanding import run as data_understanding
-from tools.data_cleaning import run as data_cleaning
-from tools.feature_engineering import run as feature_engineering
-from tools.model_training import run as model_training
-from tools.evaluate import run as evaluate
+from tools.data_understanding import data_understanding
+from tools.data_cleaning import data_cleaning
+from tools.feature_engineering import feature_engineering
+from tools.model_training import model_training
+from tools.evaluate import evaluate
 
 tool_registry = ToolRegistry()
 tool_registry.register("data_understanding", data_understanding)
 tool_registry.register("data_cleaning", data_cleaning)
 tool_registry.register("feature_engineering", feature_engineering)
-tool_registry.register("train_model", model_training)
+tool_registry.register("model_training", model_training)
 tool_registry.register("evaluate", evaluate)
 
 def run():
@@ -33,7 +33,7 @@ def run():
         google_api_key=os.getenv("GOOGLE_API_KEY"),
         temperature=0.3,
     )
-    data = "path/to/dataset.csv"
+    data = "assets\data\Classification Datasets\Titanic-Dataset.csv"
     controller = ControllerAgent(logger, llm, tool_registry)
     controller.run(data,"Analyze the dataset and train a model to predict the target variable.")
 

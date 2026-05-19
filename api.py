@@ -162,6 +162,7 @@ async def run_pipeline(
         yield f"data: {json.dumps({'status': 'completed', 'reportId': report_id, 'datasetId': dataset_id})}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
+
 @app.post("/run-custom-pipeline/{dataset_id}/{report_id}")
 async def run_custom_pipeline(
     dataset_id: str,

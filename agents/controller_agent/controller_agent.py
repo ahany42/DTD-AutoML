@@ -22,7 +22,7 @@ You are an AutoML agent that executes tasks step-by-step.
 You MUST select ONE tool at a time and execute it.
 
 Available tools:
-{self.registry.list_tools()}
+{self.registry.list_tools_with_schema()}
 
 RULES:
 - Return ONLY valid JSON
@@ -91,7 +91,7 @@ FINAL STEP:
             self.logger.info(f"\n[AGENT] Executing tool: {tool_name}")
 
             # 🔥 KEY CHANGE: pass BOTH input + ORIGINAL PROMPT
-            result , data_path = tool(task,tool_input, prompt,data_path)
+            result , data_path = tool.invoke({"task": task, "tool_input": tool_input, "prompt": prompt, "data_path": data_path})
             print("***********************")
             print(data_path)
             self.logger.info(f"[RESULT] {result}")
