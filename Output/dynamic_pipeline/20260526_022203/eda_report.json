@@ -1,0 +1,306 @@
+{
+    "title": "Titanic Passenger Survival Prediction Dataset Analysis",
+    "summary": "This dataset contains information about passengers aboard the Titanic, with the primary goal of predicting survival. It comprises 891 entries across 12 features, including passenger demographics, ticket information, and survival status. Initial analysis reveals several categorical and numerical features, with significant missing values in 'Age', 'Cabin', and 'Embarked' that require preprocessing.",
+    "sections": [
+        {
+            "title": "Dataset Overview",
+            "content": [
+                {
+                    "type": "text",
+                    "value": "The dataset provides a comprehensive record of Titanic passengers, suitable for a binary classification task to predict survival."
+                },
+                {
+                    "type": "metric",
+                    "label": "Number of Rows",
+                    "value": "891"
+                },
+                {
+                    "type": "metric",
+                    "label": "Number of Columns",
+                    "value": "12"
+                }
+            ]
+        },
+        {
+            "title": "Column Details and Data Types",
+            "content": [
+                {
+                    "type": "bullet",
+                    "value": "PassengerId (int64): A unique identifier for each passenger."
+                },
+                {
+                    "type": "bullet",
+                    "value": "Survived (int64): The target variable, indicating survival (0 = No, 1 = Yes)."
+                },
+                {
+                    "type": "bullet",
+                    "value": "Pclass (int64): Passenger class (1st, 2nd, 3rd), a proxy for socio-economic status."
+                },
+                {
+                    "type": "bullet",
+                    "value": "Name (object): Passenger's name, potentially useful for title extraction."
+                },
+                {
+                    "type": "bullet",
+                    "value": "Sex (object): Gender of the passenger."
+                },
+                {
+                    "type": "bullet",
+                    "value": "Age (float64): Age in years."
+                },
+                {
+                    "type": "bullet",
+                    "value": "SibSp (int64): Number of siblings/spouses aboard."
+                },
+                {
+                    "type": "bullet",
+                    "value": "Parch (int64): Number of parents/children aboard."
+                },
+                {
+                    "type": "bullet",
+                    "value": "Ticket (object): Ticket number, potentially containing useful patterns."
+                },
+                {
+                    "type": "bullet",
+                    "value": "Fare (float64): Passenger fare."
+                },
+                {
+                    "type": "bullet",
+                    "value": "Cabin (object): Cabin number, often indicating deck level."
+                },
+                {
+                    "type": "bullet",
+                    "value": "Embarked (object): Port of embarkation (C = Cherbourg, Q = Queenstown, S = Southampton)."
+                }
+            ]
+        },
+        {
+            "title": "Missing Values Analysis",
+            "content": [
+                {
+                    "type": "text",
+                    "value": "Several columns contain missing values, which will require careful handling during the data preprocessing phase."
+                },
+                {
+                    "type": "bullet",
+                    "value": "Age: 177 missing values (approximately 19.87% of the dataset)."
+                },
+                {
+                    "type": "bullet",
+                    "value": "Cabin: 687 missing values (approximately 77.10% of the dataset)."
+                },
+                {
+                    "type": "bullet",
+                    "value": "Embarked: 2 missing values (approximately 0.22% of the dataset)."
+                },
+                {
+                    "type": "warning",
+                    "value": "The 'Cabin' column has a very high percentage of missing values. This suggests that direct use of this feature might be challenging, and strategies like dropping it, imputing with a 'Unknown' category, or extracting deck information (if available for non-missing values) should be considered."
+                }
+            ]
+        },
+        {
+            "title": "Target Variable Identification",
+            "content": [
+                {
+                    "type": "text",
+                    "value": "The 'Survived' column is the target variable for this analysis. It is a binary categorical variable (0 for not survived, 1 for survived), indicating a classification problem."
+                }
+            ]
+        }
+    ],
+    "visualizations": [
+        {
+            "plot_type": "missing_values",
+            "columns": [
+                "PassengerId",
+                "Survived",
+                "Pclass",
+                "Name",
+                "Sex",
+                "Age",
+                "SibSp",
+                "Parch",
+                "Ticket",
+                "Fare",
+                "Cabin",
+                "Embarked"
+            ],
+            "title": "Overview of Missing Values Across All Columns",
+            "reason": "To visually identify and quantify missing data in each column, guiding imputation strategies and feature engineering decisions."
+        },
+        {
+            "plot_type": "countplot",
+            "columns": [
+                "Survived"
+            ],
+            "title": "Distribution of Survival Status",
+            "reason": "To understand the class balance of the target variable and assess potential imbalance issues."
+        },
+        {
+            "plot_type": "histogram",
+            "columns": [
+                "Age"
+            ],
+            "title": "Distribution of Passenger Age",
+            "reason": "To understand the age profile of passengers, identify potential skewness, and inform imputation strategies for missing 'Age' values."
+        },
+        {
+            "plot_type": "histogram",
+            "columns": [
+                "Fare"
+            ],
+            "title": "Distribution of Passenger Fare",
+            "reason": "To understand the distribution of ticket prices, which is often right-skewed, and identify potential outliers."
+        },
+        {
+            "plot_type": "countplot",
+            "columns": [
+                "Sex",
+                "Survived"
+            ],
+            "title": "Survival Rate by Sex",
+            "reason": "To explore the relationship between gender and survival, which is historically a significant predictor in the Titanic disaster."
+        },
+        {
+            "plot_type": "countplot",
+            "columns": [
+                "Pclass",
+                "Survived"
+            ],
+            "title": "Survival Rate by Passenger Class",
+            "reason": "To investigate how passenger class correlates with survival, indicating the impact of socio-economic status."
+        },
+        {
+            "plot_type": "boxplot",
+            "columns": [
+                "Age",
+                "Survived"
+            ],
+            "title": "Age Distribution by Survival Status",
+            "reason": "To visually compare the age distributions of survivors versus non-survivors and identify age-related survival patterns."
+        },
+        {
+            "plot_type": "boxplot",
+            "columns": [
+                "Fare",
+                "Survived"
+            ],
+            "title": "Fare Distribution by Survival Status",
+            "reason": "To visually compare the fare distributions of survivors versus non-survivors and assess the impact of ticket price on survival."
+        }
+    ],
+    "recommendations": [
+        "**Handle Missing Values:** Impute 'Age' (e.g., using median, mean, or more advanced methods like regression imputation). Impute 'Embarked' (e.g., using the mode). For 'Cabin', consider creating a 'Has_Cabin' binary feature or extracting deck information, or dropping the column due to high missingness.",
+        "**Feature Engineering:** Extract titles from the 'Name' column (e.g., Mr., Mrs., Miss, Master) as they often correlate with age and survival. Create a 'FamilySize' feature by combining 'SibSp' and 'Parch' plus one (for the passenger themselves).",
+        "**Categorical Encoding:** Convert categorical features such as 'Sex', 'Embarked', 'Pclass' (if treated as categorical), and any engineered categorical features (e.g., 'Title', 'Deck') into numerical representations using techniques like One-Hot Encoding.",
+        "**Feature Scaling:** Apply scaling (e.g., StandardScaler or MinMaxScaler) to numerical features like 'Age' and 'Fare' to ensure that no single feature dominates the model due to its scale, especially for distance-based algorithms.",
+        "**Model Selection and Training:** Train various classification models (e.g., Logistic Regression, Random Forest, Gradient Boosting, Support Vector Machines) on the prepared dataset. Utilize cross-validation for robust model evaluation.",
+        "**Model Evaluation:** Evaluate model performance using appropriate metrics such as accuracy, precision, recall, F1-score, and ROC-AUC, paying attention to potential class imbalance in the 'Survived' target variable."
+    ],
+    "generated_plots": [
+        {
+            "title": "Overview of Missing Values Across All Columns",
+            "reason": "To visually identify and quantify missing data in each column, guiding imputation strategies and feature engineering decisions.",
+            "plot_type": "missing_values",
+            "columns": [
+                "PassengerId",
+                "Survived",
+                "Pclass",
+                "Name",
+                "Sex",
+                "Age",
+                "SibSp",
+                "Parch",
+                "Ticket",
+                "Fare",
+                "Cabin",
+                "Embarked"
+            ],
+            "local_path": "output/dynamic_pipeline/20260526_022203\\plots\\plot_0.png",
+            "frontend_path": "/dynamic_pipeline/20260526_022203/plots/plot_0.png",
+            "filename": "plot_0.png"
+        },
+        {
+            "title": "Distribution of Survival Status",
+            "reason": "To understand the class balance of the target variable and assess potential imbalance issues.",
+            "plot_type": "countplot",
+            "columns": [
+                "Survived"
+            ],
+            "local_path": "output/dynamic_pipeline/20260526_022203\\plots\\plot_1.png",
+            "frontend_path": "/dynamic_pipeline/20260526_022203/plots/plot_1.png",
+            "filename": "plot_1.png"
+        },
+        {
+            "title": "Distribution of Passenger Age",
+            "reason": "To understand the age profile of passengers, identify potential skewness, and inform imputation strategies for missing 'Age' values.",
+            "plot_type": "histogram",
+            "columns": [
+                "Age"
+            ],
+            "local_path": "output/dynamic_pipeline/20260526_022203\\plots\\plot_2.png",
+            "frontend_path": "/dynamic_pipeline/20260526_022203/plots/plot_2.png",
+            "filename": "plot_2.png"
+        },
+        {
+            "title": "Distribution of Passenger Fare",
+            "reason": "To understand the distribution of ticket prices, which is often right-skewed, and identify potential outliers.",
+            "plot_type": "histogram",
+            "columns": [
+                "Fare"
+            ],
+            "local_path": "output/dynamic_pipeline/20260526_022203\\plots\\plot_3.png",
+            "frontend_path": "/dynamic_pipeline/20260526_022203/plots/plot_3.png",
+            "filename": "plot_3.png"
+        },
+        {
+            "title": "Survival Rate by Sex",
+            "reason": "To explore the relationship between gender and survival, which is historically a significant predictor in the Titanic disaster.",
+            "plot_type": "countplot",
+            "columns": [
+                "Sex",
+                "Survived"
+            ],
+            "local_path": "output/dynamic_pipeline/20260526_022203\\plots\\plot_4.png",
+            "frontend_path": "/dynamic_pipeline/20260526_022203/plots/plot_4.png",
+            "filename": "plot_4.png"
+        },
+        {
+            "title": "Survival Rate by Passenger Class",
+            "reason": "To investigate how passenger class correlates with survival, indicating the impact of socio-economic status.",
+            "plot_type": "countplot",
+            "columns": [
+                "Pclass",
+                "Survived"
+            ],
+            "local_path": "output/dynamic_pipeline/20260526_022203\\plots\\plot_5.png",
+            "frontend_path": "/dynamic_pipeline/20260526_022203/plots/plot_5.png",
+            "filename": "plot_5.png"
+        },
+        {
+            "title": "Age Distribution by Survival Status",
+            "reason": "To visually compare the age distributions of survivors versus non-survivors and identify age-related survival patterns.",
+            "plot_type": "boxplot",
+            "columns": [
+                "Age",
+                "Survived"
+            ],
+            "local_path": "output/dynamic_pipeline/20260526_022203\\plots\\plot_6.png",
+            "frontend_path": "/dynamic_pipeline/20260526_022203/plots/plot_6.png",
+            "filename": "plot_6.png"
+        },
+        {
+            "title": "Fare Distribution by Survival Status",
+            "reason": "To visually compare the fare distributions of survivors versus non-survivors and assess the impact of ticket price on survival.",
+            "plot_type": "boxplot",
+            "columns": [
+                "Fare",
+                "Survived"
+            ],
+            "local_path": "output/dynamic_pipeline/20260526_022203\\plots\\plot_7.png",
+            "frontend_path": "/dynamic_pipeline/20260526_022203/plots/plot_7.png",
+            "filename": "plot_7.png"
+        }
+    ]
+}
