@@ -1,0 +1,320 @@
+
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<meta charset="UTF-8">
+
+<title>Titanic Dataset Initial Data Analysis and Predictive Modeling Plan</title>
+
+<style>
+
+body{
+    font-family: Arial;
+    padding:40px;
+    background:#f4f4f4;
+    color:#222;
+}
+
+.container{
+    max-width:1200px;
+    margin:auto;
+}
+
+.card{
+    background:white;
+    padding:25px;
+    margin-bottom:25px;
+    border-radius:12px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.1);
+}
+
+h1{
+    color:#111;
+}
+
+h2{
+    color:#333;
+}
+
+img{
+    width:100%;
+    border-radius:10px;
+    margin-top:15px;
+}
+
+.recommendation{
+    padding:10px;
+    background:#eef6ff;
+    border-left:5px solid #007bff;
+    margin-bottom:10px;
+}
+
+.summary{
+    font-size:18px;
+    line-height:1.7;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="card">
+
+<h1>Titanic Dataset Initial Data Analysis and Predictive Modeling Plan</h1>
+
+<p class="summary">
+This analysis provides an initial overview of the Titanic dataset, identifying its structure, data types, and significant missing values. Key features like 'Age', 'Cabin', and 'Embarked' require preprocessing. The target variable 'Survived' is binary, indicating a classification task. Initial insights suggest relationships between survival and features like 'Sex', 'Pclass', 'Age', and 'Fare', which will be explored further through visualizations and used for predictive modeling.
+</p>
+
+</div>
+
+
+
+<div class="card">
+
+<h2>Dataset Overview</h2>
+
+<p>The dataset contains 891 entries and 12 columns. Key columns include 'PassengerId', 'Survived' (target), 'Pclass', 'Name', 'Sex', 'Age', 'SibSp', 'Parch', 'Ticket', 'Fare', 'Cabin', and 'Embarked'. Data types are a mix of integers, floats, and objects (strings), which is typical for tabular data. 'Survived' is the target variable, indicating a binary classification problem.</p>
+
+</div>
+
+
+
+<div class="card">
+
+<h2>Missing Values Analysis</h2>
+
+<p>Significant missing values are present in 'Cabin' (687 out of 891, ~77%), 'Age' (177 out of 891, ~20%), and 'Embarked' (2 out of 891, ~0.2%). The high percentage of missing values in 'Cabin' suggests it might be difficult to impute directly and could be better used for feature engineering (e.g., 'HasCabin' or extracting deck information). 'Age' missing values can be imputed using various strategies (mean, median, or more sophisticated methods based on 'Pclass' and 'Sex'). 'Embarked' missing values are few and can be imputed with the mode.</p>
+
+</div>
+
+
+
+<div class="card">
+
+<h2>Feature Types and Potential Issues</h2>
+
+<p>Numerical features include 'PassengerId', 'Age', 'SibSp', 'Parch', 'Fare'. Categorical features include 'Survived' (binary), 'Pclass' (ordinal, but often treated as categorical), 'Sex' (binary nominal), 'Embarked' (nominal). 'Name', 'Ticket', and 'Cabin' are object types that require feature engineering to extract meaningful information. 'Name' can yield 'Title', 'Ticket' might indicate group bookings or class, and 'Cabin' can indicate deck or presence of a cabin. 'PassengerId' is an identifier and should not be used as a feature directly for modeling.</p>
+
+</div>
+
+
+
+<div class="card">
+
+<h2>Target Variable Analysis (Survived)</h2>
+
+<p>The target variable 'Survived' is an integer type, representing a binary outcome (0 = Died, 1 = Survived). This indicates a binary classification problem. Understanding the distribution of 'Survived' and its relationship with other features is crucial for building an effective predictive model. Initial exploration will focus on how 'Survived' correlates with 'Sex', 'Pclass', 'Age', and 'Fare'.</p>
+
+</div>
+
+
+
+
+
+<div class="card">
+
+<h2>Missing Values Overview</h2>
+
+<p>To quickly identify and quantify missing data across all columns, guiding data imputation strategies.</p>
+
+<img src="plots/plot_0.png">
+
+</div>
+
+
+
+<div class="card">
+
+<h2>Distribution of Survival</h2>
+
+<p>To understand the class balance of the target variable and the overall survival rate.</p>
+
+<img src="plots/plot_1.png">
+
+</div>
+
+
+
+<div class="card">
+
+<h2>Distribution of Age</h2>
+
+<p>To visualize the age distribution of passengers, identify potential skewness or multiple modes, and inform imputation strategies.</p>
+
+<img src="plots/plot_2.png">
+
+</div>
+
+
+
+<div class="card">
+
+<h2>Age Distribution by Survival Status</h2>
+
+<p>To compare the age distribution between survivors and non-survivors, identifying if age plays a role in survival.</p>
+
+<img src="plots/plot_3.png">
+
+</div>
+
+
+
+<div class="card">
+
+<h2>Distribution of Fare</h2>
+
+<p>To visualize the distribution of ticket fares, identify skewness and potential outliers, which might require transformation.</p>
+
+<img src="plots/plot_4.png">
+
+</div>
+
+
+
+<div class="card">
+
+<h2>Fare Distribution by Survival Status</h2>
+
+<p>To compare the fare distribution between survivors and non-survivors, identifying if fare class or cost influenced survival.</p>
+
+<img src="plots/plot_5.png">
+
+</div>
+
+
+
+<div class="card">
+
+<h2>Survival Count by Sex</h2>
+
+<p>To analyze the survival rates based on gender, a historically significant factor in Titanic survival.</p>
+
+<img src="plots/plot_6.png">
+
+</div>
+
+
+
+<div class="card">
+
+<h2>Survival Count by Passenger Class</h2>
+
+<p>To analyze the survival rates based on passenger class, indicating the impact of socio-economic status.</p>
+
+<img src="plots/plot_7.png">
+
+</div>
+
+
+
+<div class="card">
+
+<h2>Survival Count by Port of Embarkation</h2>
+
+<p>To examine if the port of embarkation had any correlation with survival rates.</p>
+
+<img src="plots/plot_8.png">
+
+</div>
+
+
+
+<div class="card">
+
+<h2>Distribution of Siblings/Spouses Aboard</h2>
+
+<p>To understand the distribution of family members (siblings/spouses) aboard and identify potential family size patterns.</p>
+
+<img src="plots/plot_9.png">
+
+</div>
+
+
+
+<div class="card">
+
+<h2>Distribution of Parents/Children Aboard</h2>
+
+<p>To understand the distribution of family members (parents/children) aboard and identify potential family size patterns.</p>
+
+<img src="plots/plot_10.png">
+
+</div>
+
+
+
+<div class="card">
+
+<h2>Recommendations</h2>
+
+
+
+<div class="recommendation">
+
+Handle Missing Values: Impute 'Age' (e.g., median or regression imputation), 'Embarked' (mode imputation), and address 'Cabin' (e.g., create a 'HasCabin' binary feature or extract deck information, then drop the original column due to high missingness).
+
+</div>
+
+
+
+<div class="recommendation">
+
+Feature Engineering: Extract 'Title' from the 'Name' column. Create a 'FamilySize' feature by combining 'SibSp' and 'Parch'. Derive 'IsAlone' from 'FamilySize'. Potentially extract 'Deck' from 'Cabin' if feasible, or simply create a 'HasCabin' feature.
+
+</div>
+
+
+
+<div class="recommendation">
+
+Categorical Encoding: Convert 'Sex' (binary) and 'Embarked' (nominal) into numerical representations using one-hot encoding or label encoding. 'Pclass' can be treated as ordinal or one-hot encoded depending on model choice.
+
+</div>
+
+
+
+<div class="recommendation">
+
+Outlier Treatment: Investigate and potentially handle outliers in 'Fare' and 'Age' to improve model performance.
+
+</div>
+
+
+
+<div class="recommendation">
+
+Feature Scaling: Apply scaling (e.g., StandardScaler or MinMaxScaler) to numerical features like 'Age' and 'Fare' before model training, especially for distance-based algorithms.
+
+</div>
+
+
+
+<div class="recommendation">
+
+Model Selection and Training: Given the binary classification nature of 'Survived', explore various classification algorithms such as Logistic Regression, Decision Trees, Random Forests, Gradient Boosting Machines, and Support Vector Machines. Perform cross-validation and hyperparameter tuning to optimize model performance.
+
+</div>
+
+
+
+<div class="recommendation">
+
+Model Evaluation: Use appropriate metrics like accuracy, precision, recall, F1-score, and ROC-AUC to evaluate the trained models.
+
+</div>
+
+
+
+</div>
+
+</div>
+
+</body>
+</html>

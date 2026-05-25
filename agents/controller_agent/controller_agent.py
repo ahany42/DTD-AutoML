@@ -91,7 +91,7 @@ FINAL STEP:
             self.logger.info(f"\n[AGENT] Executing tool: {tool_name}")
 
             # 🔥 KEY CHANGE: pass BOTH input + ORIGINAL PROMPT
-            result , data_path = tool.invoke({"task": task, "tool_input": tool_input, "prompt": prompt, "data_path": data_path})
+            result , data_path = tool.invoke({"task": task, "tool_input": tool_input, "prompt": prompt, "data_path": data_path,"llm": self.llm})
             print("***********************")
             print(data_path)
             self.logger.info(f"[RESULT] {result}")
