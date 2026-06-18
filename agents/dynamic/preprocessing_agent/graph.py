@@ -1,48 +1,56 @@
-"""LangGraph workflow for PreprocessingAgent: execute data preprocessing pipeline."""
+"""LangGraph workflow for preprocessing followed by feature engineering."""
 from __future__ import annotations
 
 from typing import Any, Literal
 
 from langgraph.graph import END, StateGraph
 
+from agents.dynamic.preprocessing_agent.nodes.feature_engineering import (
+    make_feature_engineering_node,
+)
 from agents.dynamic.preprocessing_agent.nodes.preprocessing import make_preprocessing_node
 from agents.dynamic.preprocessing_agent.state import PreprocessingAgentState
 
 
-def _route_after_preprocessing(state: PreprocessingAgentState) -> Literal["end"]:
-    """
-    Route after preprocessing completes.
-    Currently just routes to END, but can be extended for multi-step workflows.
-    """
-    return "end"
+def _route_after_preprocessing(
+    state: PreprocessingAgentState,
+) -> Literal["feature_engineering", "end"]:
+    """Do not attempt feature engineering when preprocessing failed."""
+    if state.get("error"):
+        return "end"
+    pipeline_state = state.get("pipeline_state") or {}
+    if pipeline_state.get("status") != "success":
+        return "end"
+    return "feature_engineering"
 
 
 def build_preprocessing_graph(llm: Any, registry: Any, config: dict | None = None):
     """
-    Compiled LangGraph for the preprocessing phase.
+    Compile the dynamic preprocessing workflow.
 
-    Nodes:
-      preprocessing → preprocessing_execution tool (handles all preprocessing steps)
-
-    Args:
-        llm: Language model instance
-        registry: Tool registry containing 'preprocessing_execution' tool
-        config: Configuration dict with preprocessing_input and other parameters
-
-    Returns:
-        Compiled LangGraph workflow
+    preprocessing -> feature_engineering -> END
     """
     cfg = dict(config or {})
 
     workflow = StateGraph(PreprocessingAgentState)
     workflow.add_node(
-        "preprocessing", make_preprocessing_node(llm, registry, cfg))
+        "preprocessing",
+        make_preprocessing_node(llm, registry, cfg),
+    )
+    workflow.add_node(
+        "feature_engineering",
+        make_feature_engineering_node(llm, registry, cfg),
+    )
 
     workflow.set_entry_point("preprocessing")
     workflow.add_conditional_edges(
         "preprocessing",
         _route_after_preprocessing,
-        {"end": END},
+        {
+            "feature_engineering": "feature_engineering",
+            "end": END,
+        },
     )
+    workflow.add_edge("feature_engineering", END)
 
     return workflow.compile()

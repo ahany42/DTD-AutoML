@@ -1,286 +1,603 @@
-"""Feature engineering tool with AI-guided feature selection."""
-from langchain_core.tools import tool
-from pathlib import Path
+"""Feature engineering tool with LLM-suggested feature combinations."""
+from __future__ import annotations
+
 import json
-import pandas as pd
+import re
+from itertools import combinations
+from pathlib import Path
+from typing import Any
+
 import numpy as np
+import pandas as pd
+from langchain_core.tools import tool
 
 from tools.pipeline_state import ensure_state, merge_state
+
+
+SUPPORTED_OPERATIONS = {
+    "add",
+    "subtract",
+    "multiply",
+    "divide",
+    "mean",
+    "absolute_difference",
+    "square",
+}
+
+OPERATION_ALIASES = {
+    "sum": "add",
+    "difference": "subtract",
+    "product": "multiply",
+    "interaction": "multiply",
+    "ratio": "divide",
+    "average": "mean",
+    "abs_difference": "absolute_difference",
+    "absolute difference": "absolute_difference",
+    "squared": "square",
+}
 
 
 @tool
 def feature_engineering_execution(task, tool_input, prompt, data_path, llm, state=None):
     """
-    AI-guided feature engineering: LLM analyzes column names → select top 3-4 by correlation.
+    Create LLM-suggested feature combinations and append the best 3-4 new
+    features, ranked by absolute correlation with the training target.
 
     Inputs (via tool_input):
-    - X_train_path: str - Path to training features
-    - X_test_path: str - Path to test features
-    - y_train_path: str - Path to training target
-    - y_test_path: str - Path to test target (optional)
-    - top_k: int (default 4) - Select top K features (3-4 recommended)
-    - use_llm: bool (default True) - Use LLM to suggest meaningful columns
-    - output_folder: str (optional)
+    - X_train_path: path to the preprocessed training features
+    - X_test_path: path to the preprocessed test features
+    - y_train_path: path to the training target
+    - top_k: number of new features to append (clamped to 3-4, default 4)
+    - use_llm: whether to ask the LLM for feature recipes (default True)
+    - max_candidates: maximum valid generated candidates to evaluate (default 12)
+    - output_folder: optional output folder; defaults beside X_train.csv
 
-    Returns:
-    - status: success/error
-    - X_train_engineered_path, X_test_engineered_path
-    - feature_summary with:
-      - tried_columns: all columns analyzed
-      - correlations: correlation of each to target
-      - selected_features: final 3-4 selected
-      - selection_reasoning: why LLM selected them
+    Outputs:
+    - X_train_engineered.csv and X_test_engineered.csv containing every
+      original feature plus only the selected new features
+    - feature_engineering_report.json containing all generated recipes,
+      their correlations, rejected recipes, and the selected features
     """
     pipeline_state = ensure_state(state, data_path, prompt)
 
     try:
-        # Extract inputs from state if not provided
+        tool_input = tool_input if isinstance(tool_input, dict) else {}
         X_train_path = tool_input.get("X_train_path") or pipeline_state.get("X_train_path")
         X_test_path = tool_input.get("X_test_path") or pipeline_state.get("X_test_path")
         y_train_path = tool_input.get("y_train_path") or pipeline_state.get("y_train_path")
 
-        top_k = int(tool_input.get("top_k", 4))
-        use_llm = bool(tool_input.get("use_llm", True))
-        output_folder = tool_input.get("output_folder") or str(
-            Path("Output") / "FeatureEngineering" / Path(data_path).stem
-        )
+        _validate_input_path(X_train_path, "X_train")
+        _validate_input_path(X_test_path, "X_test")
+        _validate_input_path(y_train_path, "y_train")
 
-        # Validate paths exist
-        if not Path(X_train_path).exists():
-            raise FileNotFoundError(f"X_train not found: {X_train_path}")
-        if not Path(X_test_path).exists():
-            raise FileNotFoundError(f"X_test not found: {X_test_path}")
-        if not Path(y_train_path).exists():
-            raise FileNotFoundError(f"y_train not found: {y_train_path}")
+        top_k = max(3, min(4, int(tool_input.get("top_k", 4))))
+        max_candidates = max(top_k, min(30, int(tool_input.get("max_candidates", 12))))
+        use_llm = _as_bool(tool_input.get("use_llm", True))
+        output_folder = tool_input.get("output_folder") or str(Path(X_train_path).parent)
 
-        # Load data
         X_train = pd.read_csv(X_train_path)
         X_test = pd.read_csv(X_test_path)
-        y_train = pd.read_csv(y_train_path).iloc[:, 0]
+        y_train_frame = pd.read_csv(y_train_path)
+        if y_train_frame.empty or y_train_frame.shape[1] == 0:
+            raise ValueError("y_train file does not contain a target column")
 
-        all_columns = X_train.columns.tolist()
+        y_train = pd.to_numeric(y_train_frame.iloc[:, 0], errors="coerce").reset_index(drop=True)
+        X_train = X_train.reset_index(drop=True)
+        X_test = X_test.reset_index(drop=True)
 
-        # Step 1: Calculate correlations for all columns
-        correlations = _calculate_correlations(X_train, y_train)
+        if len(X_train) != len(y_train):
+            raise ValueError(
+                f"X_train and y_train row counts differ: {len(X_train)} != {len(y_train)}"
+            )
+        if list(X_train.columns) != list(X_test.columns):
+            raise ValueError("X_train and X_test must have the same columns in the same order")
 
-        # Step 2: Get LLM suggestions (if enabled)
-        llm_suggestions = []
-        selection_reasoning = ""
-        if use_llm and llm:
-            llm_suggestions, selection_reasoning = _get_llm_suggestions(
-                all_columns, correlations, llm
+        numeric_columns = X_train.select_dtypes(include=[np.number]).columns.tolist()
+        if not numeric_columns:
+            raise ValueError("No numeric preprocessed columns are available for feature combinations")
+
+        original_correlations = _calculate_correlations(X_train[numeric_columns], y_train)
+        recipes = []
+        llm_reasoning = ""
+        suggestion_source = "deterministic_fallback"
+
+        if use_llm and llm is not None:
+            recipes, llm_reasoning = _get_llm_feature_recipes(
+                numeric_columns=numeric_columns,
+                dtypes={column: str(X_train[column].dtype) for column in numeric_columns},
+                correlations=original_correlations,
+                target_name=str(y_train_frame.columns[0]),
+                llm=llm,
+                max_candidates=max_candidates,
+            )
+            if recipes:
+                recipes = [
+                    {**recipe, "source": "llm"}
+                    for recipe in recipes
+                    if isinstance(recipe, dict)
+                ]
+                if recipes:
+                    suggestion_source = "llm"
+
+        if not recipes:
+            recipes = _build_fallback_recipes(
+                numeric_columns=numeric_columns,
+                correlations=original_correlations,
+                max_candidates=max_candidates,
+            )
+            if use_llm:
+                llm_reasoning = (
+                    f"{llm_reasoning} "
+                    "The LLM returned no usable recipe objects; deterministic "
+                    "fallback recipes were used."
+                ).strip()
+            elif not use_llm:
+                llm_reasoning = "LLM feature suggestions were disabled; deterministic fallback recipes were used."
+
+        generated_train, generated_test, generated_features, rejected_features = (
+            _materialize_recipes(
+                X_train=X_train,
+                X_test=X_test,
+                recipes=recipes,
+                max_candidates=max_candidates,
+            )
+        )
+
+        if suggestion_source == "llm" and len(generated_features) < top_k:
+            fallback_train, fallback_test, fallback_features, fallback_rejected = (
+                _materialize_recipes(
+                    X_train=X_train,
+                    X_test=X_test,
+                    recipes=_build_fallback_recipes(
+                        numeric_columns=numeric_columns,
+                        correlations=original_correlations,
+                        max_candidates=max_candidates,
+                    ),
+                    max_candidates=max_candidates - len(generated_features),
+                    reserved_names=set(generated_train.columns),
+                )
+            )
+            generated_train = pd.concat(
+                [generated_train, fallback_train], axis=1
+            )
+            generated_test = pd.concat(
+                [generated_test, fallback_test], axis=1
+            )
+            generated_features.extend(fallback_features)
+            rejected_features.extend(fallback_rejected)
+            llm_reasoning = (
+                f"{llm_reasoning} "
+                "Fallback recipes supplemented the LLM output because fewer than "
+                f"{top_k} valid LLM features were generated."
+            ).strip()
+
+        if generated_train.empty:
+            raise ValueError(
+                "No valid new feature columns could be generated. "
+                f"Rejected recipes: {rejected_features}"
             )
 
-        # Step 3: Select top K by correlation
-        if llm_suggestions:
-            # If LLM suggested columns, use those and rank by correlation
-            suggested_cols = [col for col in llm_suggestions if col in all_columns]
-            selected_features = sorted(
-                suggested_cols,
-                key=lambda x: abs(correlations.get(x, 0)),
-                reverse=True
-            )[:top_k]
-        else:
-            # Otherwise, select top K by correlation
-            selected_features = sorted(
-                all_columns,
-                key=lambda x: abs(correlations.get(x, 0)),
-                reverse=True
-            )[:top_k]
+        generated_correlations = _calculate_correlations(generated_train, y_train)
+        ranked_features = sorted(
+            generated_train.columns,
+            key=lambda column: (-abs(generated_correlations.get(column, 0.0)), column),
+        )
+        selected_features = ranked_features[: min(top_k, len(ranked_features))]
 
-        # Filter to selected features
-        X_train_engineered = X_train[selected_features]
-        X_test_engineered = X_test[selected_features]
+        X_train_engineered = pd.concat(
+            [X_train, generated_train[selected_features]], axis=1
+        )
+        X_test_engineered = pd.concat(
+            [X_test, generated_test[selected_features]], axis=1
+        )
 
-        # Create output folder
         output_path = Path(output_folder)
         output_path.mkdir(parents=True, exist_ok=True)
-
-        # Save engineered features
         X_train_engineered_path = str(output_path / "X_train_engineered.csv")
         X_test_engineered_path = str(output_path / "X_test_engineered.csv")
-        feature_summary_path = str(output_path / "feature_summary.json")
+        report_path = str(output_path / "feature_engineering_report.json")
 
         X_train_engineered.to_csv(X_train_engineered_path, index=False)
         X_test_engineered.to_csv(X_test_engineered_path, index=False)
 
-        # Build comprehensive summary
-        summary = {
+        generated_by_name = {item["name"]: item for item in generated_features}
+        evaluated_features = []
+        for feature_name in ranked_features:
+            item = dict(generated_by_name[feature_name])
+            item["correlation_with_target"] = float(
+                generated_correlations.get(feature_name, 0.0)
+            )
+            item["absolute_correlation"] = float(
+                abs(generated_correlations.get(feature_name, 0.0))
+            )
+            item["selected"] = feature_name in selected_features
+            evaluated_features.append(item)
+
+        report = {
             "status": "success",
-            "tried_columns": all_columns,
-            "correlations": {col: float(correlations.get(col, 0)) for col in all_columns},
+            "task": task,
+            "target_column": str(y_train_frame.columns[0]),
+            "suggestion_source": suggestion_source,
+            "llm_enabled": use_llm,
+            "llm_reasoning": llm_reasoning,
+            "original_columns": X_train.columns.tolist(),
+            "original_feature_count": int(X_train.shape[1]),
+            "generated_features": evaluated_features,
+            "llm_generated_features": [
+                item for item in evaluated_features if item["source"] == "llm"
+            ],
+            "fallback_generated_features": [
+                item
+                for item in evaluated_features
+                if item["source"] == "deterministic_fallback"
+            ],
+            "rejected_features": rejected_features,
             "selected_features": selected_features,
-            "selected_correlations": {col: float(correlations.get(col, 0)) for col in selected_features},
-            "n_original_features": len(X_train.columns),
-            "n_engineered_features": len(selected_features),
-            "use_llm": use_llm,
-            "selection_reasoning": selection_reasoning,
-            "X_train_shape": list(X_train_engineered.shape),
-            "X_test_shape": list(X_test_engineered.shape),
+            "selected_correlations": {
+                column: float(generated_correlations[column])
+                for column in selected_features
+            },
+            "selection_method": "largest absolute Pearson correlation with y_train",
+            "requested_top_k": top_k,
+            "generated_candidate_count": len(evaluated_features),
+            "selected_feature_count": len(selected_features),
+            "final_columns": X_train_engineered.columns.tolist(),
+            "final_feature_count": int(X_train_engineered.shape[1]),
+            "X_train_engineered_shape": list(X_train_engineered.shape),
+            "X_test_engineered_shape": list(X_test_engineered.shape),
+            "X_train_engineered_path": X_train_engineered_path,
+            "X_test_engineered_path": X_test_engineered_path,
         }
 
-        with open(feature_summary_path, "w") as f:
-            json.dump(summary, f, indent=2)
+        with open(report_path, "w", encoding="utf-8") as report_file:
+            json.dump(report, report_file, indent=2, ensure_ascii=False)
 
-        # Update pipeline state
+        feature_output = {
+            "X_train_engineered_path": X_train_engineered_path,
+            "X_test_engineered_path": X_test_engineered_path,
+            "feature_report_path": report_path,
+            "feature_summary_path": report_path,
+            "generated_features": evaluated_features,
+            "selected_features": selected_features,
+            "selected_correlations": report["selected_correlations"],
+        }
         pipeline_state = merge_state(
             pipeline_state,
             {
                 "step": "feature_engineering_complete",
                 "status": "success",
-                "feature_engineering_output": {
-                    "X_train_engineered_path": X_train_engineered_path,
-                    "X_test_engineered_path": X_test_engineered_path,
-                    "feature_summary_path": feature_summary_path,
-                },
-                "feature_names": selected_features,
-                "n_features": len(selected_features),
-            }
+                "feature_engineering_output": feature_output,
+                "X_train_engineered_path": X_train_engineered_path,
+                "X_test_engineered_path": X_test_engineered_path,
+                "feature_names": X_train_engineered.columns.tolist(),
+                "n_features": int(X_train_engineered.shape[1]),
+            },
         )
 
         result = {
             "status": "success",
-            "message": f"Feature engineering completed: {len(X_train.columns)} → {len(selected_features)} features",
-            "feature_engineering_output": {
-                "X_train_engineered_path": X_train_engineered_path,
-                "X_test_engineered_path": X_test_engineered_path,
-                "feature_summary_path": feature_summary_path,
-                "tried_columns": all_columns,
-                "selected_features": selected_features,
-                "correlations": {col: float(correlations.get(col, 0)) for col in all_columns},
-            },
+            "message": (
+                f"Feature engineering appended {len(selected_features)} new features "
+                f"to {X_train.shape[1]} original features"
+            ),
+            "feature_engineering_output": feature_output,
         }
-
         return result, pipeline_state
 
-    except Exception as e:
+    except Exception as exc:
         import traceback
-        error_msg = f"Feature engineering failed: {str(e)}\n{traceback.format_exc()}"
-        pipeline_state["step"] = "feature_engineering_failed"
-        pipeline_state["error"] = error_msg
-        result = {"status": "error", "error": error_msg}
-        return result, pipeline_state
+
+        error_msg = f"Feature engineering failed: {exc}\n{traceback.format_exc()}"
+        pipeline_state = merge_state(
+            pipeline_state,
+            {
+                "step": "feature_engineering_failed",
+                "status": "error",
+                "error": error_msg,
+            },
+        )
+        return {"status": "error", "error": error_msg}, pipeline_state
 
 
-def _calculate_correlations(X, y):
-    """Calculate correlation of each feature to target."""
-    correlations = {}
-    for col in X.columns:
-        try:
-            if pd.api.types.is_numeric_dtype(X[col]):
-                corr = X[col].corr(y)
-                correlations[col] = corr if not np.isnan(corr) else 0
-            else:
-                correlations[col] = 0  # Non-numeric: correlation is 0
-        except:
-            correlations[col] = 0
+def _validate_input_path(path_value: Any, label: str) -> None:
+    if not path_value:
+        raise ValueError(f"{label}_path was not provided")
+    if not Path(path_value).exists():
+        raise FileNotFoundError(f"{label} not found: {path_value}")
+
+
+def _as_bool(value: Any) -> bool:
+    if isinstance(value, str):
+        return value.strip().lower() not in {"0", "false", "no", "off"}
+    return bool(value)
+
+
+def _calculate_correlations(X: pd.DataFrame, y: pd.Series) -> dict[str, float]:
+    """Calculate finite Pearson correlations between numeric features and target."""
+    correlations: dict[str, float] = {}
+    numeric_y = pd.to_numeric(y, errors="coerce")
+    for column in X.columns:
+        numeric_x = pd.to_numeric(X[column], errors="coerce")
+        valid = numeric_x.notna() & numeric_y.notna()
+        if valid.sum() < 2 or numeric_x[valid].nunique() < 2 or numeric_y[valid].nunique() < 2:
+            correlations[column] = 0.0
+            continue
+        correlation = numeric_x[valid].corr(numeric_y[valid])
+        correlations[column] = float(correlation) if pd.notna(correlation) else 0.0
     return correlations
 
 
-def _get_llm_suggestions(columns, correlations, llm):
-    """
-    Use LLM to suggest meaningful columns based on names and correlations.
-    
-    Returns:
-    - suggested_columns: list of suggested column names
-    - reasoning: explanation from LLM
-    """
-    try:
-        # Prepare data for LLM
-        col_info = []
-        for col in columns:
-            corr = correlations.get(col, 0)
-            col_info.append(f"{col} (correlation: {corr:.3f})")
+def _get_llm_feature_recipes(
+    *,
+    numeric_columns: list[str],
+    dtypes: dict[str, str],
+    correlations: dict[str, float],
+    target_name: str,
+    llm: Any,
+    max_candidates: int,
+) -> tuple[list[dict[str, Any]], str]:
+    """Ask the LLM for structured, executable feature-combination recipes."""
+    column_info = [
+        {
+            "name": column,
+            "dtype": dtypes[column],
+            "correlation_with_target": round(correlations.get(column, 0.0), 6),
+        }
+        for column in numeric_columns
+    ]
+    llm_prompt = f"""
+You are creating candidate numeric features for a machine-learning dataset.
+The target is {target_name!r}. The listed columns are already preprocessed numeric columns.
 
-        prompt = f"""
-Analyze these dataset columns and their correlations to the target variable.
-Select the 3-4 MOST MEANINGFUL columns for a machine learning model.
-Prioritize high correlation AND semantic importance.
+Suggest between 8 and {max_candidates} useful NEW feature combinations. Do not select or
+rename existing columns. Each feature must be reproducible on test data without the target.
 
-Columns with correlations:
-{chr(10).join(col_info)}
+Allowed operations:
+- add: columns[0] + columns[1]
+- subtract: columns[0] - columns[1]
+- multiply: columns[0] * columns[1]
+- divide: columns[0] / columns[1]
+- mean: average of two columns
+- absolute_difference: absolute difference of two columns
+- square: square of one column
 
-Return ONLY a JSON object like:
+Available columns:
+{json.dumps(column_info, indent=2)}
+
+Return only one JSON object with this exact shape:
 {{
-  "selected_columns": ["col1", "col2", "col3"],
-  "reasoning": "Brief explanation"
+  "features": [
+    {{
+      "name": "short_unique_feature_name",
+      "operation": "multiply",
+      "columns": ["exact_column_1", "exact_column_2"],
+      "reason": "why this combination may help"
+    }}
+  ],
+  "reasoning": "brief overall reasoning"
 }}
 """
 
-        response = llm.invoke(prompt)
-        
-        # Parse response
-        import re
-        json_match = re.search(r'\{.*\}', response.content, re.DOTALL)
-        if json_match:
-            result = json.loads(json_match.group())
-            return result.get("selected_columns", []), result.get("reasoning", "")
-        
-        return [], ""
-
-    except Exception as e:
-        return [], f"LLM suggestion failed: {str(e)}"
+    try:
+        response = llm.invoke(llm_prompt)
+        content = getattr(response, "content", response)
+        parsed = _extract_json_object(content)
+        raw_features = parsed.get("features", [])
+        if not isinstance(raw_features, list):
+            return [], "The LLM response did not contain a feature list."
+        return raw_features[:max_candidates], str(parsed.get("reasoning", ""))
+    except Exception as exc:
+        return [], f"LLM feature suggestion failed: {exc}"
 
 
-def _generate_interactions(X_train, X_test, max_features):
-    """
-    Generate interaction features (polynomial features, 2-way interactions).
-    Keeps top features by variance.
-    """
-    from sklearn.preprocessing import PolynomialFeatures
-
-    # Only use numeric columns
-    numeric_cols = X_train.select_dtypes(include=[np.number]).columns.tolist()
-    X_train_numeric = X_train[numeric_cols]
-    X_test_numeric = X_test[numeric_cols]
-
-    # Generate polynomial features (degree 2 = interactions)
-    poly = PolynomialFeatures(degree=2, include_bias=False)
-    X_train_poly = poly.fit_transform(X_train_numeric)
-    X_test_poly = poly.transform(X_test_numeric)
-
-    # Get feature names
-    feature_names = poly.get_feature_names_out(numeric_cols)
-
-    # Convert back to DataFrame
-    X_train_poly = pd.DataFrame(X_train_poly, columns=feature_names)
-    X_test_poly = pd.DataFrame(X_test_poly, columns=feature_names)
-
-    # Add non-numeric columns back
-    non_numeric_cols = X_train.select_dtypes(exclude=[np.number]).columns.tolist()
-    if non_numeric_cols:
-        X_train_poly = pd.concat([X_train_poly, X_train[non_numeric_cols].reset_index(drop=True)], axis=1)
-        X_test_poly = pd.concat([X_test_poly, X_test[non_numeric_cols].reset_index(drop=True)], axis=1)
-
-    return X_train_poly, X_test_poly
+def _extract_json_object(content: Any) -> dict[str, Any]:
+    if isinstance(content, dict):
+        return content
+    if isinstance(content, list):
+        content = "".join(
+            str(item.get("text", "")) if isinstance(item, dict) else str(item)
+            for item in content
+        )
+    text = str(content).strip()
+    if text.startswith("```"):
+        text = re.sub(r"^```(?:json)?\s*", "", text, flags=re.IGNORECASE)
+        text = re.sub(r"\s*```$", "", text)
+    start = text.find("{")
+    end = text.rfind("}")
+    if start == -1 or end == -1 or end < start:
+        raise ValueError("LLM response did not contain a JSON object")
+    parsed = json.loads(text[start : end + 1])
+    if not isinstance(parsed, dict):
+        raise ValueError("LLM response JSON must be an object")
+    return parsed
 
 
-def _select_features(X, y, method="variance", max_features=20):
-    """
-    Select features based on method: variance, correlation, or RFE.
-    """
-    if method == "variance":
-        from sklearn.feature_selection import VarianceThreshold
+def _build_fallback_recipes(
+    *,
+    numeric_columns: list[str],
+    correlations: dict[str, float],
+    max_candidates: int,
+) -> list[dict[str, Any]]:
+    """Generate a bounded deterministic recipe set when the LLM is unavailable."""
+    ranked_columns = sorted(
+        numeric_columns,
+        key=lambda column: (-abs(correlations.get(column, 0.0)), column),
+    )
+    source_columns = ranked_columns[: min(6, len(ranked_columns))]
+    recipes: list[dict[str, Any]] = []
 
-        selector = VarianceThreshold(threshold=0.01)
-        X_selected = selector.fit_transform(X)
-        selected_cols = X.columns[selector.get_support()].tolist()
+    for left, right in combinations(source_columns, 2):
+        for operation in ("multiply", "divide", "add", "absolute_difference"):
+            recipes.append(
+                {
+                    "name": f"fe_{_safe_name(left)}_{operation}_{_safe_name(right)}",
+                    "operation": operation,
+                    "columns": [left, right],
+                    "reason": "Deterministic fallback using highly target-correlated source columns.",
+                    "source": "deterministic_fallback",
+                }
+            )
+            if len(recipes) >= max_candidates:
+                return recipes
 
-    elif method == "correlation":
-        # Remove features with low correlation to target
-        correlations = X.corrwith(y).abs().sort_values(ascending=False)
-        selected_cols = correlations.head(max_features).index.tolist()
+    for column in source_columns:
+        recipes.append(
+            {
+                "name": f"fe_{_safe_name(column)}_square",
+                "operation": "square",
+                "columns": [column],
+                "reason": "Deterministic fallback nonlinear transformation.",
+                "source": "deterministic_fallback",
+            }
+        )
+        if len(recipes) >= max_candidates:
+            break
+    return recipes
 
-    elif method == "rfe":
-        from sklearn.feature_selection import RFE
-        from sklearn.ensemble import RandomForestClassifier
 
-        rf = RandomForestClassifier(n_estimators=50, random_state=42)
-        selector = RFE(rf, n_features_to_select=min(max_features, len(X.columns)))
-        selector.fit(X, y)
-        selected_cols = X.columns[selector.get_support()].tolist()
+def _materialize_recipes(
+    *,
+    X_train: pd.DataFrame,
+    X_test: pd.DataFrame,
+    recipes: list[dict[str, Any]],
+    max_candidates: int,
+    reserved_names: set[str] | None = None,
+) -> tuple[pd.DataFrame, pd.DataFrame, list[dict[str, Any]], list[dict[str, Any]]]:
+    train_features: dict[str, pd.Series] = {}
+    test_features: dict[str, pd.Series] = {}
+    generated: list[dict[str, Any]] = []
+    rejected: list[dict[str, Any]] = []
+    used_names = set(X_train.columns)
+    used_names.update(reserved_names or set())
 
-    else:
-        selected_cols = X.columns.tolist()[:max_features]
+    for raw_recipe in recipes:
+        if len(generated) >= max_candidates:
+            break
+        try:
+            recipe = _normalize_recipe(raw_recipe, X_train.columns.tolist(), used_names)
+            train_series = _apply_recipe(X_train, recipe)
+            test_series = _apply_recipe(X_test, recipe)
 
-    return selected_cols
+            train_series = pd.to_numeric(train_series, errors="coerce").replace(
+                [np.inf, -np.inf], np.nan
+            )
+            test_series = pd.to_numeric(test_series, errors="coerce").replace(
+                [np.inf, -np.inf], np.nan
+            )
+            fill_value = train_series.median(skipna=True)
+            if pd.isna(fill_value):
+                fill_value = 0.0
+            train_series = train_series.fillna(float(fill_value)).astype(float)
+            test_series = test_series.fillna(float(fill_value)).astype(float)
+
+            feature_scale = max(
+                1.0,
+                float(train_series.abs().max(skipna=True)),
+            )
+            feature_std = float(train_series.std(ddof=0))
+            if (
+                train_series.nunique(dropna=False) < 2
+                or not np.isfinite(feature_std)
+                or feature_std <= 1e-12 * feature_scale
+            ):
+                raise ValueError(
+                    "generated feature is constant or numerically near-constant "
+                    "in training data"
+                )
+
+            name = recipe["name"]
+            train_features[name] = train_series
+            test_features[name] = test_series
+            used_names.add(name)
+            generated.append({**recipe, "fill_value": float(fill_value)})
+        except Exception as exc:
+            rejected.append({"recipe": raw_recipe, "reason": str(exc)})
+
+    return (
+        pd.DataFrame(train_features, index=X_train.index),
+        pd.DataFrame(test_features, index=X_test.index),
+        generated,
+        rejected,
+    )
+
+
+def _normalize_recipe(
+    raw_recipe: Any,
+    available_columns: list[str],
+    used_names: set[str],
+) -> dict[str, Any]:
+    if not isinstance(raw_recipe, dict):
+        raise ValueError("recipe must be a JSON object")
+
+    operation = str(raw_recipe.get("operation", "")).strip().lower()
+    operation = OPERATION_ALIASES.get(operation, operation)
+    if operation not in SUPPORTED_OPERATIONS:
+        raise ValueError(f"unsupported operation: {operation!r}")
+
+    columns = raw_recipe.get("columns")
+    if not isinstance(columns, list):
+        columns = [
+            value
+            for value in (raw_recipe.get("left"), raw_recipe.get("right"))
+            if value is not None
+        ]
+    columns = [str(column) for column in columns]
+    required_count = 1 if operation == "square" else 2
+    if len(columns) != required_count:
+        raise ValueError(f"{operation} requires exactly {required_count} source column(s)")
+    missing = [column for column in columns if column not in available_columns]
+    if missing:
+        raise ValueError(f"unknown source columns: {missing}")
+
+    requested_name = str(raw_recipe.get("name", "")).strip()
+    default_name = f"fe_{'_'.join(_safe_name(column) for column in columns)}_{operation}"
+    name = _safe_name(requested_name) if requested_name else default_name
+    if not name.lower().startswith("fe_"):
+        name = f"fe_{name}"
+    if name in used_names:
+        suffix = 2
+        base_name = name
+        while f"{base_name}_{suffix}" in used_names:
+            suffix += 1
+        name = f"{base_name}_{suffix}"
+
+    return {
+        "name": name,
+        "operation": operation,
+        "columns": columns,
+        "reason": str(raw_recipe.get("reason", "")).strip(),
+        "source": str(
+            raw_recipe.get("source", "deterministic_fallback")
+        ).strip(),
+    }
+
+
+def _apply_recipe(frame: pd.DataFrame, recipe: dict[str, Any]) -> pd.Series:
+    operation = recipe["operation"]
+    columns = recipe["columns"]
+    left = pd.to_numeric(frame[columns[0]], errors="coerce")
+
+    if operation == "square":
+        return left.pow(2)
+
+    right = pd.to_numeric(frame[columns[1]], errors="coerce")
+    if operation == "add":
+        return left + right
+    if operation == "subtract":
+        return left - right
+    if operation == "multiply":
+        return left * right
+    if operation == "divide":
+        safe_denominator = right.where(right.abs() > 1e-12)
+        return left / safe_denominator
+    if operation == "mean":
+        return (left + right) / 2.0
+    if operation == "absolute_difference":
+        return (left - right).abs()
+    raise ValueError(f"unsupported operation: {operation}")
+
+
+def _safe_name(value: str) -> str:
+    cleaned = re.sub(r"[^0-9A-Za-z_]+", "_", str(value).strip())
+    cleaned = re.sub(r"_+", "_", cleaned).strip("_")
+    return cleaned or "generated_feature"

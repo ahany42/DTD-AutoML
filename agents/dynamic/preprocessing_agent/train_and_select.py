@@ -70,8 +70,18 @@ def load_preprocessed_data(data_folder):
     if not data_path.exists():
         raise FileNotFoundError(f"Data folder not found: {data_path}")
     
-    X_train_path = data_path / "X_train.csv"
-    X_test_path = data_path / "X_test.csv"
+    engineered_train_path = data_path / "X_train_engineered.csv"
+    engineered_test_path = data_path / "X_test_engineered.csv"
+    use_engineered = (
+        engineered_train_path.exists() and engineered_test_path.exists()
+    )
+
+    X_train_path = (
+        engineered_train_path if use_engineered else data_path / "X_train.csv"
+    )
+    X_test_path = (
+        engineered_test_path if use_engineered else data_path / "X_test.csv"
+    )
     y_train_path = data_path / "y_train.csv"
     y_test_path = data_path / "y_test.csv"
     
@@ -84,6 +94,10 @@ def load_preprocessed_data(data_folder):
     y_test = pd.read_csv(y_test_path).iloc[:, 0]     # First column
     
     if VERBOSE:
+        print(
+            "[+] Feature source: "
+            + ("engineered features" if use_engineered else "preprocessed features")
+        )
         print(f"[+] Loaded training data: {X_train.shape}")
         print(f"[+] Loaded test data: {X_test.shape}")
     
