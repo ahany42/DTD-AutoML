@@ -1,7 +1,4 @@
 """
-agents/intent_detector.py
-D.T.D (Data To Deployment) — Multi-Agent AutoML Pipeline
-
 Agent 0: Intent Detector & Router
 
 Responsibility:
@@ -29,6 +26,7 @@ import logging
 from typing import Optional, Literal
 
 from pydantic import BaseModel, Field
+from langchain_core.messages import SystemMessage, HumanMessage
 
 from tools.schema_extractor import extract_schema
 from tools.target_suggester import TargetSuggestionAgent
@@ -69,7 +67,7 @@ class IntentDetectorAgent:
     def __init__(
         self,
         model_name: str = "gemini-2.5-flash",
-        temperature: float = 0.6,
+        temperature: float = 0.0,
         google_api_key: Optional[str] = None,
     ):
         base_llm   = get_llm(model_name=model_name, temperature=temperature, google_api_key=google_api_key)
@@ -89,16 +87,24 @@ class IntentDetectorAgent:
         schema = extract_schema(data_path)
 
         # Step 2 — prompt via tools/prompt_builder.py
-        prompt = build_prompt_intent_detector(
-            nl_query=nl_query,
-            columns=schema["columns"],
-            dtypes=schema["dtypes"],
-            shape=schema["shape"],
+        # Returns PromptPair(system=..., user=...) — two separate prompts
+        prompts = build_prompt_intent_detector(
+            nl_query  = nl_query,
+            data_path = data_path,
+            columns   = schema["columns"],
+            dtypes    = schema["dtypes"],
+            shape     = schema["shape"],
         )
 
-        # Step 3 — single LLM call
+        logger.info("[IntentDetector] System prompt:%s", prompts.system)
+        logger.info("[IntentDetector] User prompt:%s", prompts.user)
+
+        # Step 3 — single LLM call with proper SystemMessage + HumanMessage
         logger.info("[IntentDetector] Invoking LLM…")
-        flags: IntentFlags = self.llm.invoke(prompt)
+        flags: IntentFlags = self.llm.invoke([
+            SystemMessage(content=prompts.system),
+            HumanMessage(content=prompts.user),
+        ])
         logger.info("[IntentDetector] flags=%s", flags.model_dump())
 
         # Step 4 — fallback: target_column
