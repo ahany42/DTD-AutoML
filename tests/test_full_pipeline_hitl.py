@@ -46,7 +46,7 @@ def test_full_pipeline_hitl():
     state = controller.run({
         "data_path": data_path,
         "prompt": prompt,
-        "target_column": "Survived",
+        # "target_column": "Survived",
         "run_id": run_id,
     })
     
