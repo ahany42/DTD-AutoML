@@ -165,8 +165,10 @@ class ControllerAgent:
         data_path     = inputs.get("data_path")
         target_column = inputs.get("target_column")
         nl_query      = inputs.get("prompt") or inputs.get("nl_query", "")
-        run_id        = inputs.get("run_id") or f"run-{uuid.uuid4().hex[:8]}"
-
+        report_id     = inputs.get("report_id") or inputs.get("run_id") or f"run-{uuid.uuid4().hex[:8]}"
+        run_id        = report_id  # run_id corresponds to report_id in database
+        print("Report ID:", report_id)
+        print("Run ID:", run_id)
         if not data_path:
             raise ValueError("inputs['data_path'] is required")
         if not nl_query:
@@ -176,7 +178,7 @@ class ControllerAgent:
             "\n" + "=" * 60 + "\n"
             "D.T.D PIPELINE — NEW RUN\n"
             + "=" * 60 + "\n"
-            f"run_id      : {run_id}\n"
+            f"report_id   : {run_id}\n"
             f"data_path   : {data_path}\n"
             f"nl_query    : {nl_query}\n"
             f"target_col  : {target_column or '(will be inferred)'}"
@@ -233,12 +235,22 @@ class ControllerAgent:
         self.logger.info("decision : %s", decision)
         if feedback_text:
             self.logger.info("feedback : %s", feedback_text)
+        if decision == "feedback":
+            self.logger.info("paused")
 
         config = {"configurable": {"thread_id": run_id}}
 
         # Create resume command with human response
-        resume_payload = {"decision": decision, "text": feedback_text}
-        return self._invoke(Command(resume=resume_payload), config, run_id)
+        # Include full feedback context for the graph to re-run agent if feedback provided
+        resume_payload = {
+            "decision": decision,
+            "feedback_text": feedback_text,
+            "text": feedback_text,  # backward compatibility
+        }
+        # When decision is "feedback", we need to pass the feedback through the interrupt response
+        # so the graph can re-run the agent with the user's feedback
+        command = Command(resume=resume_payload)
+        return self._invoke(command, config, run_id)
 
     # ─────────────────────────────────────────────
     # Internal invoke wrapper
@@ -279,10 +291,12 @@ class ControllerAgent:
                 if isinstance(interrupt_data, dict):
                     agent_name    = interrupt_data.get("agent", "unknown")
                     agent_output  = interrupt_data.get("agent_output", {})
+                    if interrupt_data.get("decision") == "feedback" or interrupt_data.get("feedback_text"):
+                        self.logger.info("paused")
 
                 self.logger.info("\n" + "─" * 60)
                 self.logger.info("[HITL CHECKPOINT] Pipeline paused at: %s", agent_name)
-                self.logger.info("run_id: %s  (use this to resume)", run_id)
+                self.logger.info("report_id: %s  (use this to resume)", run_id)
                 self.logger.info("─" * 60)
                 self.logger.info("[AGENT OUTPUT PREVIEW]")
                 self.logger.info(json.dumps(agent_output, indent=2, default=str)[:1000])
@@ -298,7 +312,8 @@ class ControllerAgent:
                 partial_state = dict(final_state)
                 partial_state["__interrupted__"] = True
                 partial_state["__paused_at__"]   = agent_name
-                partial_state["__run_id__"]       = run_id
+                partial_state["__report_id__"]   = run_id
+                partial_state["__run_id__"]      = run_id
                 return partial_state
 
             self.logger.info("\n[ControllerAgent] Pipeline completed successfully.")
@@ -318,10 +333,12 @@ class ControllerAgent:
 
             agent_name    = interrupt_data.get("agent", "unknown")
             agent_output  = interrupt_data.get("agent_output", {})
+            if interrupt_data.get("decision") == "feedback" or interrupt_data.get("feedback_text"):
+                self.logger.info("paused")
 
             self.logger.info("\n" + "─" * 60)
             self.logger.info("[HITL CHECKPOINT] Pipeline paused at: %s", agent_name)
-            self.logger.info("run_id: %s  (use this to resume)", run_id)
+            self.logger.info("report_id: %s  (use this to resume)", run_id)
             self.logger.info("─" * 60)
             self.logger.info("[AGENT OUTPUT PREVIEW]")
             self.logger.info(json.dumps(agent_output, indent=2, default=str)[:1000])
@@ -346,13 +363,15 @@ class ControllerAgent:
 
             partial_state["__interrupted__"] = True
             partial_state["__paused_at__"]   = agent_name
-            partial_state["__run_id__"]       = run_id
+            partial_state["__report_id__"]   = run_id
+            partial_state["__run_id__"]      = run_id
             return partial_state
 
         except Exception as exc:
             self.logger.error("[ControllerAgent] Pipeline error: %s", exc, exc_info=True)
             return {
                 "__error__": str(exc),
+                "__report_id__": run_id,
                 "__run_id__": run_id,
             }
 
@@ -526,6 +545,7 @@ def main():
             "prompt":        prompt,
             "target_column": target_column,
             "run_id":        args.run_id,
+            "report_id":     args.run_id,
         })
 
     # ── Output ────────────────────────────────────────────────────────────────

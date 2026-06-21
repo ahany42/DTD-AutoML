@@ -197,6 +197,13 @@ async def run_custom_pipeline(
         "result": result,
     }
     
+
+@app.post('/run-custom-pipeline/pause')
+async def pause_pipeline():
+    pass
+@app.post('/run-custom-pipeline/resume')
+async def resume_pipeline():
+    pass
 if __name__ == "__main__":
     import uvicorn
     print("Starting API server...")
