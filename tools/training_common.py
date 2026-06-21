@@ -82,6 +82,8 @@ def load_preprocessed_splits(
 def resolve_problem_type(pipeline_state: dict[str, Any]) -> str | None:
     if pipeline_state.get("problem_type"):
         return pipeline_state["problem_type"]
+    if pipeline_state.get("task_type") in ("classification", "regression"):
+        return pipeline_state["task_type"]
 
     summary_path = (pipeline_state.get("preprocessing_output") or {}).get("summary_path")
     if summary_path and Path(summary_path).exists():

@@ -74,8 +74,13 @@ from agents.dynamic.evaluation_agent import (
     route_after_evaluation,
 )
 
+from agents.dynamic.preprocessing_agent import (
+    preprocessing_node,
+    preprocessing_checkpoint_node,
+    route_after_preprocessing,
+)
+
 # Stubs — replace with real imports as each agent is implemented:
-# from agents.dynamic.preprocessing_agent.preprocessing_agent               import preprocessing_node, route_after_preprocessing
 # from agents.dynamic.feature_engineering_agent.feature_engineering_agent   import feature_engineering_node, route_after_feature_engineering
 # from agents.dynamic.deployment_agent.deployment_agent                     import deployment_node, route_after_deployment
 
@@ -264,17 +269,9 @@ def build_graph() -> any:
     )
 
     # ── Agent 2: Preprocessing ────────────────────────────────────────────────
-    preprocessing_node       = _stub_node("preprocessing_agent")
-    preprocessing_checkpoint = _make_checkpoint_node("preprocessing")
-    route_after_preprocessing = _make_stub_router([
-        ("run_feature_engineering", "feature_engineering_agent"),
-        ("run_model_selection",     "model_selection_agent"),
-        ("run_training",            "training_agent"),
-        ("run_evaluation",          "evaluation_agent"),
-        ("run_deployment",          "deployment_agent"),
-    ])
+    # Real implementation — imported from agents.dynamic.preprocessing_agent
     graph.add_node("preprocessing_agent",      preprocessing_node)
-    graph.add_node("preprocessing_checkpoint", preprocessing_checkpoint)
+    graph.add_node("preprocessing_checkpoint", preprocessing_checkpoint_node)
     graph.add_edge("preprocessing_agent", "preprocessing_checkpoint")
     graph.add_conditional_edges(
         "preprocessing_checkpoint",

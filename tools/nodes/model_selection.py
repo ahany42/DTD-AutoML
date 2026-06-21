@@ -9,7 +9,6 @@ import dask.dataframe as dd
 import pandas as pd
 from langchain_core.messages import HumanMessage, SystemMessage
 
-from tools.graph_state import TrainingGraphState
 from tools.training_common import LARGE_DATA_ROW_THRESHOLD
 from src.utils.logger import Logger
 
@@ -282,7 +281,7 @@ def _catalog_block(problem_type: str) -> str:
 If rows>{LARGE_DATA_ROW_THRESHOLD:,}, Dask-XGBoost runs automatically at train time (do not add a 4th approach)."""
 
 
-def model_selection_node(state: TrainingGraphState, llm) -> TrainingGraphState:
+def model_selection_node(state: dict, llm) -> dict:
     try:
         directives = state.get("automl_directives") or {}
         report = directives.get("report") or state.get("report") or {}

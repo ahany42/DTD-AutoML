@@ -6,7 +6,7 @@ from typing import Any
 
 from langchain_core.tools import tool
 
-from tools.plan_graph import build_plan_graph
+from tools.nodes.model_selection import model_selection_node as tools_model_selection_node
 from tools.pipeline_state import ensure_state, merge_state, parse_tool_input
 from tools.training_common import (
     LARGE_DATA_ROW_THRESHOLD,
@@ -232,8 +232,7 @@ def plan_training(task, tool_input, prompt, data_path, llm, state=None):
         "preferred_models": preferred_models,
     }
 
-    plan_graph = build_plan_graph(llm)
-    graph_state = plan_graph.invoke(graph_state)
+    graph_state = tools_model_selection_node(graph_state, llm)
 
     if graph_state.get("error"):
         return {"status": "error", "error": graph_state["error"]}, merge_state(
@@ -276,6 +275,23 @@ def plan_training(task, tool_input, prompt, data_path, llm, state=None):
             "status": "planned",
         },
     )
+
+    # Clean any DataFrame that might have leaked or been stored in the state
+    if "data" in graph_state:
+        del graph_state["data"]
+
+    import pandas as pd
+    keys_to_delete = []
+    for k, v in pipeline_state.items():
+        if isinstance(v, pd.DataFrame):
+            keys_to_delete.append(k)
+        elif isinstance(v, dict):
+            for sub_k, sub_v in list(v.items()):
+                if isinstance(sub_v, pd.DataFrame):
+                    del v[sub_k]
+    for k in keys_to_delete:
+        del pipeline_state[k]
+
     return {
         "status": "planned",
         "message": "Plan ready. Call train_tool next.",

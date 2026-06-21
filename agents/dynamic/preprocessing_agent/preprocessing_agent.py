@@ -1,167 +1,44 @@
-"""Interactive, tool-driven standalone preprocessing agent."""
+"""Preprocessing Agent — LangGraph orchestrator nodes and routing."""
 from __future__ import annotations
 
 import json
-import sys
+import logging
+import os
+import pandas as pd
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
+from langgraph.types import interrupt
 
-_project_root = Path(__file__).resolve().parent.parent.parent.parent
-if str(_project_root) not in sys.path:
-    sys.path.insert(0, str(_project_root))
+from state.pipeline_state import PipelineState
+from tools.llm_client import get_llm
+from tools.prompt_builder import build_prompt_preprocessing
+from src.utils.logger import Logger
 
-from agents.dynamic.preprocessing_agent.graph import build_preprocessing_graph
-from agents.dynamic.preprocessing_agent.state import PreprocessingAgentState
-from agents.dynamic.preprocessing_agent.tool_runner import invoke_tool
-from tools.pipeline_state import empty_state, merge_state
+# Import fine-grained preprocessing tools directly
+from tools.preprocessing_inspection import preprocessing_inspection
+from tools.preprocessing_plan import preprocessing_plan
+from tools.preprocessing_split import preprocessing_split
+from tools.preprocessing_missing_values import preprocessing_missing_values
+from tools.preprocessing_outliers import preprocessing_outliers
+from tools.preprocessing_encoding import preprocessing_encoding
+from tools.preprocessing_scaling import preprocessing_scaling
+from tools.preprocessing_normalization import preprocessing_normalization
+from tools.preprocessing_balancing import preprocessing_balancing
+from tools.preprocessing_validation import preprocessing_validation
 
-
-TOOL_IMPORTS = {
-    "preprocessing_inspection": (
-        "tools.preprocessing_inspection",
-        "preprocessing_inspection",
-    ),
-    "preprocessing_plan": ("tools.preprocessing_plan", "preprocessing_plan"),
-    "preprocessing_split": ("tools.preprocessing_split", "preprocessing_split"),
-    "preprocessing_missing_values": (
-        "tools.preprocessing_missing_values",
-        "preprocessing_missing_values",
-    ),
-    "preprocessing_outliers": (
-        "tools.preprocessing_outliers",
-        "preprocessing_outliers",
-    ),
-    "preprocessing_encoding": (
-        "tools.preprocessing_encoding",
-        "preprocessing_encoding",
-    ),
-    "preprocessing_scaling": (
-        "tools.preprocessing_scaling",
-        "preprocessing_scaling",
-    ),
-    "preprocessing_normalization": (
-        "tools.preprocessing_normalization",
-        "preprocessing_normalization",
-    ),
-    "preprocessing_balancing": (
-        "tools.preprocessing_balancing",
-        "preprocessing_balancing",
-    ),
-    "preprocessing_validation": (
-        "tools.preprocessing_validation",
-        "preprocessing_validation",
-    ),
-    "feature_engineering_execution": (
-        "tools.feature_engineering_execution",
-        "feature_engineering_execution",
-    ),
-}
+logger = logging.getLogger(__name__)
 
 
 class PreprocessingAgent:
-    """Plan and execute preprocessing through separate registered tools."""
+    """
+    Plan and execute preprocessing sequentially using individual tools.
+    Avoids using any sub-graphs or monolithic execution scripts.
+    """
 
-    def __init__(self, logger: Any, llm: Any, registry: Any):
-        self.logger = logger
-        self.llm = llm
-        self.registry = registry
-        self._register_tools()
-
-    def _register_tools(self) -> None:
-        import importlib
-
-        for tool_name, (module_name, attribute_name) in TOOL_IMPORTS.items():
-            if self.registry.get(tool_name) is None:
-                module = importlib.import_module(module_name)
-                self.registry.register(tool_name, getattr(module, attribute_name))
-
-    def prepare_plan(
-        self,
-        *,
-        data_path: str,
-        prompt: str,
-        target_column: str,
-        feature_top_k: int = 4,
-        output_folder: str | None = None,
-        use_llm: bool = True,
-        pipeline_state: dict | None = None,
-    ) -> dict:
-        """Inspect the dataset and generate a preprocessing plan."""
-        output_folder = output_folder or str(
-            Path("Output") / "Preprocessing" / Path(data_path).stem
-        )
-        state = pipeline_state or empty_state(data_path, prompt)
-        state = merge_state(
-            state,
-            {
-                "data_path": data_path,
-                "prompt": prompt,
-                "target_column": target_column,
-                "status": "running",
-            },
-        )
-
-        inspect_result, state = invoke_tool(
-            self.registry.get("preprocessing_inspection"),
-            task="Inspect dataset for preprocessing",
-            tool_input={
-                "target_column": target_column,
-                "output_folder": output_folder,
-            },
-            prompt=prompt,
-            data_path=data_path,
-            llm=self.llm,
-            pipeline_state=state,
-        )
-        if inspect_result.get("status") == "error":
-            return state
-
-        plan_result, state = invoke_tool(
-            self.registry.get("preprocessing_plan"),
-            task="Build a preprocessing plan",
-            tool_input={
-                "evidence": state.get("preprocessing_evidence"),
-                "feature_top_k": feature_top_k,
-                "output_folder": output_folder,
-                "use_llm": use_llm,
-            },
-            prompt=prompt,
-            data_path=data_path,
-            llm=self.llm,
-            pipeline_state=state,
-        )
-        if plan_result.get("status") == "error":
-            llm_error = plan_result.get(
-                "error", "Unknown LLM planning error"
-            )
-            self.logger.warning(
-                f"{llm_error}. Retrying with deterministic planning."
-            )
-            state.pop("error", None)
-            state["status"] = "running"
-            plan_result, state = invoke_tool(
-                self.registry.get("preprocessing_plan"),
-                task="Build a deterministic preprocessing plan",
-                tool_input={
-                    "evidence": state.get("preprocessing_evidence"),
-                    "feature_top_k": feature_top_k,
-                    "output_folder": output_folder,
-                    "use_llm": False,
-                },
-                prompt=prompt,
-                data_path=data_path,
-                llm=self.llm,
-                pipeline_state=state,
-            )
-            if plan_result.get("status") == "success":
-                plan = state.get("preprocessing_plan", {})
-                warnings = list(plan.get("warnings") or [])
-                warnings.append(
-                    f"LLM planning failed, so a deterministic plan was used: {llm_error}"
-                )
-                plan["warnings"] = warnings
-                state["preprocessing_plan"] = plan
-        return state
+    def __init__(self, logger_obj: Any = None, llm: Any = None, registry: Any = None):
+        self.logger = logger_obj or Logger()
+        self.llm = llm or get_llm()
+        # registry parameter is accepted for backward compatibility
 
     def run(
         self,
@@ -169,241 +46,397 @@ class PreprocessingAgent:
         prompt: str,
         pipeline_state: dict | None = None,
         *,
-        task: str = "Execute preprocessing plan",
-        target_column: str = "",
+        task: str = "Execute preprocessing pipeline",
+        target_column: str | None = None,
         test_size: float = 0.2,
         random_state: int = 42,
         use_llm: bool = True,
-        feature_top_k: int = 4,
         output_folder: str | None = None,
-        feature_engineering_input: dict | None = None,
+        feedback_context: str = "",
     ) -> dict:
-        """Execute only this agent's preprocessing and feature-engineering work."""
+        """Execute the full preprocessing pipeline sequentially using fine-grained tools."""
+        from state.pipeline_state import make_initial_state
+
+        if pipeline_state is None:
+            pipeline_state = make_initial_state(data_path, prompt)
+
+        if not target_column:
+            target_column = pipeline_state.get("target_column")
+
+        if not target_column:
+            raise ValueError("target_column must be provided in pipeline_state or as a run argument.")
+
+        pipeline_state["target_column"] = target_column
+
+        task_type = pipeline_state.get("task_type", "unknown")
+        if task_type == "unknown" or not task_type:
+            # Determine task type directly from sample data
+            df_sample = pd.read_csv(data_path, nrows=5)
+            y_sample = df_sample[target_column]
+            if pd.api.types.is_numeric_dtype(y_sample) and y_sample.nunique() > 20:
+                task_type = "regression"
+            else:
+                task_type = "classification"
+        pipeline_state["task_type"] = task_type
+
         output_folder = output_folder or str(
             Path("Output") / "Preprocessing" / Path(data_path).stem
         )
-        state = pipeline_state
-        if not state or not state.get("preprocessing_plan"):
-            state = self.prepare_plan(
-                data_path=data_path,
-                prompt=prompt,
-                target_column=target_column,
-                feature_top_k=feature_top_k,
-                output_folder=output_folder,
-                use_llm=use_llm,
-                pipeline_state=state,
-            )
-        if state.get("status") == "error":
-            return state
+        Path(output_folder).mkdir(parents=True, exist_ok=True)
 
-        config = {
-            "target_column": target_column,
-            "test_size": test_size,
-            "random_state": random_state,
-            "use_llm": use_llm,
-            "feature_top_k": feature_top_k,
-            "feature_engineering_input": feature_engineering_input or {},
-            "output_folder": output_folder,
-        }
-        graph = build_preprocessing_graph(self.llm, self.registry, config)
-        initial: PreprocessingAgentState = {
-            "data_path": data_path,
+        # Helper to check for errors in intermediate tool results
+        def check_error(result: dict, state: dict) -> bool:
+            if result.get("status") == "error":
+                state["error"] = result.get("error", "Step failed")
+                state["status"] = "error"
+                return True
+            return False
+
+        # 1. Dataset Inspection
+        self.logger.info("[PreprocessingAgent] 1/10 Running dataset inspection...")
+        res, pipeline_state = preprocessing_inspection.invoke({
+            "task": "Inspect dataset for preprocessing",
+            "tool_input": {
+                "target_column": target_column,
+                "output_folder": output_folder,
+            },
             "prompt": prompt,
-            "task": task,
-            "pipeline_state": state,
-            "step": "preprocessing_agent_start",
+            "data_path": data_path,
+            "llm": self.llm,
+            "state": pipeline_state,
+        })
+        if check_error(res, pipeline_state):
+            return pipeline_state
+
+        # 2. Build Preprocessing Plan
+        self.logger.info("[PreprocessingAgent] 2/10 Generating preprocessing plan...")
+        prompts = build_prompt_preprocessing(
+            data_path=data_path,
+            target_column=target_column,
+            task_type=task_type,
+            preprocessing_context=pipeline_state.get("preprocessing_context"),
+            test_size=test_size,
+            feedback_context=feedback_context,
+        )
+
+        res, pipeline_state = preprocessing_plan.invoke({
+            "task": "Build a preprocessing plan",
+            "tool_input": {
+                "evidence": pipeline_state.get("preprocessing_evidence"),
+                "feature_top_k": 4,
+                "output_folder": output_folder,
+                "use_llm": use_llm,
+            },
+            "prompt": prompts.user,
+            "data_path": data_path,
+            "llm": self.llm,
+            "state": pipeline_state,
+        })
+        if check_error(res, pipeline_state):
+            return pipeline_state
+
+        # 3. Split Dataset
+        self.logger.info("[PreprocessingAgent] 3/10 Creating dataset train/test splits...")
+        res, pipeline_state = preprocessing_split.invoke({
+            "task": "Prepare data and create the train/test split",
+            "tool_input": {
+                "plan": pipeline_state["preprocessing_plan"],
+                "target_column": target_column,
+                "output_folder": output_folder,
+                "test_size": test_size,
+                "random_state": random_state,
+            },
+            "prompt": prompt,
+            "data_path": data_path,
+            "llm": self.llm,
+            "state": pipeline_state,
+        })
+        if check_error(res, pipeline_state):
+            return pipeline_state
+
+        # 4. Handle Missing Values
+        self.logger.info("[PreprocessingAgent] 4/10 Imputing missing values...")
+        res, pipeline_state = preprocessing_missing_values.invoke({
+            "task": "Handle missing values",
+            "tool_input": {
+                "plan": pipeline_state["preprocessing_plan"],
+                "X_train_path": pipeline_state["X_train_path"],
+                "X_test_path": pipeline_state["X_test_path"],
+                "y_train_path": pipeline_state["y_train_path"],
+                "y_test_path": pipeline_state["y_test_path"],
+                "output_folder": output_folder,
+            },
+            "prompt": prompt,
+            "data_path": data_path,
+            "llm": self.llm,
+            "state": pipeline_state,
+        })
+        if check_error(res, pipeline_state):
+            return pipeline_state
+
+        # 5. Handle Outliers
+        self.logger.info("[PreprocessingAgent] 5/10 Handling outliers...")
+        res, pipeline_state = preprocessing_outliers.invoke({
+            "task": "Handle numerical outliers",
+            "tool_input": {
+                "plan": pipeline_state["preprocessing_plan"],
+                "X_train_path": pipeline_state["X_train_path"],
+                "X_test_path": pipeline_state["X_test_path"],
+                "y_train_path": pipeline_state["y_train_path"],
+                "y_test_path": pipeline_state["y_test_path"],
+                "output_folder": output_folder,
+            },
+            "prompt": prompt,
+            "data_path": data_path,
+            "llm": self.llm,
+            "state": pipeline_state,
+        })
+        if check_error(res, pipeline_state):
+            return pipeline_state
+
+        # 6. Encode Categorical Features
+        self.logger.info("[PreprocessingAgent] 6/10 Encoding categorical features...")
+        res, pipeline_state = preprocessing_encoding.invoke({
+            "task": "Encode categorical features",
+            "tool_input": {
+                "plan": pipeline_state["preprocessing_plan"],
+                "X_train_path": pipeline_state["X_train_path"],
+                "X_test_path": pipeline_state["X_test_path"],
+                "y_train_path": pipeline_state["y_train_path"],
+                "y_test_path": pipeline_state["y_test_path"],
+                "output_folder": output_folder,
+            },
+            "prompt": prompt,
+            "data_path": data_path,
+            "llm": self.llm,
+            "state": pipeline_state,
+        })
+        if check_error(res, pipeline_state):
+            return pipeline_state
+
+        # 7. Scale Numerical Features
+        self.logger.info("[PreprocessingAgent] 7/10 Scaling numerical features...")
+        res, pipeline_state = preprocessing_scaling.invoke({
+            "task": "Scale numerical features",
+            "tool_input": {
+                "plan": pipeline_state["preprocessing_plan"],
+                "X_train_path": pipeline_state["X_train_path"],
+                "X_test_path": pipeline_state["X_test_path"],
+                "y_train_path": pipeline_state["y_train_path"],
+                "y_test_path": pipeline_state["y_test_path"],
+                "output_folder": output_folder,
+            },
+            "prompt": prompt,
+            "data_path": data_path,
+            "llm": self.llm,
+            "state": pipeline_state,
+        })
+        if check_error(res, pipeline_state):
+            return pipeline_state
+
+        # 8. Normalize Feature Rows
+        self.logger.info("[PreprocessingAgent] 8/10 Normalizing feature rows...")
+        res, pipeline_state = preprocessing_normalization.invoke({
+            "task": "Normalize feature rows",
+            "tool_input": {
+                "plan": pipeline_state["preprocessing_plan"],
+                "X_train_path": pipeline_state["X_train_path"],
+                "X_test_path": pipeline_state["X_test_path"],
+                "y_train_path": pipeline_state["y_train_path"],
+                "y_test_path": pipeline_state["y_test_path"],
+                "output_folder": output_folder,
+            },
+            "prompt": prompt,
+            "data_path": data_path,
+            "llm": self.llm,
+            "state": pipeline_state,
+        })
+        if check_error(res, pipeline_state):
+            return pipeline_state
+
+        # 9. Balance Target Variable
+        self.logger.info("[PreprocessingAgent] 9/10 Balancing training target...")
+        res, pipeline_state = preprocessing_balancing.invoke({
+            "task": "Balance the training target",
+            "tool_input": {
+                "plan": pipeline_state["preprocessing_plan"],
+                "X_train_path": pipeline_state["X_train_path"],
+                "X_test_path": pipeline_state["X_test_path"],
+                "y_train_path": pipeline_state["y_train_path"],
+                "y_test_path": pipeline_state["y_test_path"],
+                "output_folder": output_folder,
+            },
+            "prompt": prompt,
+            "data_path": data_path,
+            "llm": self.llm,
+            "state": pipeline_state,
+        })
+        if check_error(res, pipeline_state):
+            return pipeline_state
+
+        # 10. Final Model-Readiness Validation
+        self.logger.info("[PreprocessingAgent] 10/10 Validating modeling readiness...")
+        res, pipeline_state = preprocessing_validation.invoke({
+            "task": "Validate modeling readiness",
+            "tool_input": {
+                "X_train_path": pipeline_state["X_train_path"],
+                "X_test_path": pipeline_state["X_test_path"],
+                "y_train_path": pipeline_state["y_train_path"],
+                "y_test_path": pipeline_state["y_test_path"],
+                "output_folder": output_folder,
+            },
+            "prompt": prompt,
+            "data_path": data_path,
+            "llm": self.llm,
+            "state": pipeline_state,
+        })
+        if check_error(res, pipeline_state):
+            return pipeline_state
+
+        # Rebuild full combined dataset for clean analysis
+        try:
+            X_train_path = pipeline_state.get("X_train_path")
+            X_test_path = pipeline_state.get("X_test_path")
+            y_train_path = pipeline_state.get("y_train_path")
+            y_test_path = pipeline_state.get("y_test_path")
+
+            if X_train_path and X_test_path and y_train_path and y_test_path:
+                X_train = pd.read_csv(X_train_path)
+                X_test = pd.read_csv(X_test_path)
+                y_train = pd.read_csv(y_train_path).squeeze("columns")
+                y_test = pd.read_csv(y_test_path).squeeze("columns")
+
+                train_df = X_train.copy()
+                train_df[target_column] = y_train.reset_index(drop=True)
+
+                test_df = X_test.copy()
+                test_df[target_column] = y_test.reset_index(drop=True)
+
+                clean_df = pd.concat([train_df, test_df], ignore_index=True)
+                clean_data_path = os.path.join(output_folder, "full_preprocessed.csv")
+                clean_df.to_csv(clean_data_path, index=False)
+                pipeline_state["clean_data_path"] = clean_data_path
+                self.logger.info(f"[PreprocessingAgent] Combined clean dataset written to {clean_data_path}")
+        except Exception as e:
+            self.logger.warning(f"Failed to build clean dataset from splits: {e}")
+
+        # Populate structured UI column actions
+        column_actions_frontend = []
+        plan_cols = (pipeline_state.get("preprocessing_plan") or {}).get("columns") or {}
+        for col in sorted(plan_cols.keys()):
+            dec = plan_cols[col]
+            col_actions = {
+                "column": col,
+                "action": "drop" if dec.get("drop") else "transform",
+                "reason": dec.get("reason", "policy_decision"),
+                "policy_source": "llm_policy" if use_llm else "default_policy",
+                "details": {
+                    "type": dec.get("type"),
+                    "missing": pipeline_state.get("missing_value_actions", {}).get(col, {}).get("method"),
+                    "outlier": pipeline_state.get("outlier_actions", {}).get(col, {}).get("method"),
+                    "encoding": pipeline_state.get("encoding_actions", {}).get(col, {}).get("method"),
+                }
+            }
+            column_actions_frontend.append(col_actions)
+
+        # Serialize column_actions_frontend to json file
+        column_actions_path = os.path.join(output_folder, "column_actions_frontend.json")
+        try:
+            with open(column_actions_path, "w", encoding="utf-8") as f:
+                json.dump(column_actions_frontend, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            self.logger.warning(f"Failed to write column actions to file: {e}")
+
+        # Build final agent output for UI panel
+        output_info = pipeline_state.get("preprocessing_output") or {}
+        output_info["column_actions_frontend_path"] = column_actions_path
+        output_info["policy_path"] = pipeline_state.get("preprocessing_plan_path") or ""
+        pipeline_state["preprocessing_output"] = output_info
+
+        agent_output = {
+            "status": "success",
+            "task_type": pipeline_state.get("task_type"),
+            "column_actions": column_actions_frontend,
+            "preprocessing_plan": pipeline_state.get("preprocessing_plan"),
+            "X_train_path": pipeline_state.get("X_train_path"),
+            "X_test_path": pipeline_state.get("X_test_path"),
+            "y_train_path": pipeline_state.get("y_train_path"),
+            "y_test_path": pipeline_state.get("y_test_path"),
         }
 
-        self.logger.info("\n" + "=" * 60)
-        self.logger.info("STANDALONE DYNAMIC PREPROCESSING AGENT")
-        self.logger.info("=" * 60)
-        final_state: PreprocessingAgentState = graph.invoke(initial)
-        result = final_state.get("pipeline_state") or state
-        if final_state.get("error"):
-            self.logger.warning(final_state["error"])
-        return result
+        merged_outputs = dict(pipeline_state.get("agent_outputs", {}))
+        merged_outputs["preprocessing"] = agent_output
+        pipeline_state["agent_outputs"] = merged_outputs
+
+        return pipeline_state
 
 
-def _print_columns(columns: list[str]) -> None:
-    print("\nAvailable columns:")
-    for index, column in enumerate(columns, start=1):
-        print(f"  {index:>2}. {column}")
+def _build_feedback_context(state: PipelineState, agent_name: str = "preprocessing") -> str:
+    """Format and pull user feedback for this specific agent node."""
+    history = state.get("feedback_history", []) or []
+    own = [h["feedback_text"] for h in history if h.get("agent") == agent_name]
+    if own:
+        return f"\n\nUser Feedback History for {agent_name}:\n" + "\n".join(f"- {f}" for f in own)
+    return ""
 
 
-def _choose_target(columns: list[str], default_target: str) -> str:
-    _print_columns(columns)
-    default_number = (
-        columns.index(default_target) + 1 if default_target in columns else 1
-    )
-    while True:
-        answer = input(
-            f"\nChoose target by number or name [{default_target or columns[default_number - 1]}]: "
-        ).strip()
-        if not answer:
-            return default_target if default_target in columns else columns[default_number - 1]
-        if answer.isdigit() and 1 <= int(answer) <= len(columns):
-            return columns[int(answer) - 1]
-        if answer in columns:
-            return answer
-        print("Invalid target. Enter one of the displayed numbers or exact names.")
-
-
-def _print_plan(plan: dict[str, Any]) -> None:
-    print("\n" + "=" * 70)
-    print("PROPOSED PREPROCESSING PLAN")
-    print("=" * 70)
-    print(f"Summary: {plan.get('summary', '')}")
-    print(f"Duplicates: {plan.get('duplicates', 'keep')}")
-    for column, decision in plan.get("columns", {}).items():
-        if decision.get("drop"):
-            action = "DROP"
-        else:
-            action = (
-                f"type={decision.get('type')} | missing={decision.get('missing')} | "
-                f"outlier={decision.get('outlier')} | encoding={decision.get('encoding')}"
-            )
-        override = (
-            f" | USER OVERRIDE={decision['user_override']}"
-            if decision.get("user_override")
-            else ""
-        )
-        print(f"- {column}: {action}{override}")
-    print(f"Scaling: {plan.get('scaling', {}).get('method', 'none')}")
-    print(f"Normalization: {plan.get('normalization', {}).get('method', 'none')}")
-    print(f"Balancing: {plan.get('balancing', {}).get('method', 'none')}")
-    feature_plan = plan.get("feature_engineering", {})
-    if feature_plan.get("enabled", True):
-        print(
-            "Feature engineering: run | "
-            f"keep top {feature_plan.get('top_k', 4)} from "
-            f"{feature_plan.get('max_candidates', 12)} candidates"
-        )
-    else:
-        print("Feature engineering: disabled by user (top_k=0)")
-    for warning in plan.get("warnings", []):
-        print(f"WARNING: {warning}")
-    print("=" * 70)
-
-
-def _interactive_main() -> int:
-    import os
-
-    import pandas as pd
-    from dotenv import load_dotenv
-    from langchain_google_genai import ChatGoogleGenerativeAI
-
-    from src.utils.logger import Logger
-    from tools.registry import ToolRegistry
-
-    load_dotenv(_project_root / ".env")
-    default_dataset = _project_root / "uploads" / "Titanic-Dataset.csv"
-    default_target = "Survived"
-
-    print("\nStandalone Dynamic Preprocessing Agent")
-    print("Press Enter to accept a value shown in brackets.\n")
-    chosen_path = input(f"Dataset CSV path [{default_dataset}]: ").strip()
-    data_path = Path(chosen_path or default_dataset).expanduser().resolve()
-    if not data_path.exists():
-        print(f"Dataset not found: {data_path}")
-        return 1
-
-    columns = pd.read_csv(data_path, nrows=5).columns.tolist()
-    target_column = _choose_target(columns, default_target)
-    prompt = input(
-        "\nWhat do you want to do in preprocessing?\n> "
-    ).strip()
-    if not prompt:
-        prompt = (
-            "Prepare the data safely for modeling. Handle missing values and "
-            "outliers, encode categorical columns, scale when useful, preserve "
-            "important columns, and balance the target only if needed."
-        )
-    top_k_raw = input(
-        "\nHow many generated feature-engineering columns should be retained? [4]: "
-    ).strip()
-    try:
-        feature_top_k = max(0, min(20, int(top_k_raw or "4")))
-    except ValueError:
-        feature_top_k = 4
-        print("Invalid number; using 4.")
-
-    api_key = os.getenv("GOOGLE_API_KEY")
-    if not api_key:
-        print("GOOGLE_API_KEY is missing from the environment/.env file.")
-        return 1
-    llm = ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash",
-        google_api_key=api_key,
-        temperature=0.2,
-    )
-    agent = PreprocessingAgent(Logger(), llm, ToolRegistry())
-    output_folder = str(
-        _project_root / "Output" / "Preprocessing" / data_path.stem
-    )
-
-    plan_state = agent.prepare_plan(
-        data_path=str(data_path),
-        prompt=prompt,
-        target_column=target_column,
-        feature_top_k=feature_top_k,
-        output_folder=output_folder,
-    )
-    if plan_state.get("status") == "error":
-        print(plan_state.get("error"))
-        return 1
-
-    while True:
-        _print_plan(plan_state["preprocessing_plan"])
-        answer = input(
-            "\nType 'approve', 'cancel', or describe changes to the plan:\n> "
-        ).strip()
-        if answer.casefold() in {"approve", "approved", "yes", "y"}:
-            break
-        if answer.casefold() in {"cancel", "no", "n", "quit", "exit"}:
-            print("Cancelled. No preprocessing was executed.")
-            return 0
-        prompt = f"{prompt}\nPlan revision requested by user: {answer}"
-        plan_state = agent.prepare_plan(
-            data_path=str(data_path),
-            prompt=prompt,
-            target_column=target_column,
-            feature_top_k=feature_top_k,
-            output_folder=output_folder,
-            pipeline_state=plan_state,
-        )
-        if plan_state.get("status") == "error":
-            print(
-                plan_state.get(
-                    "error",
-                    "The revised plan could not be generated. Please try another revision.",
-                )
-            )
-            continue
+def preprocessing_node(state: PipelineState) -> dict:
+    """LangGraph node representing the Preprocessing Agent."""
+    logger.info("[PreprocessingAgent] Executing LangGraph node")
+    agent = PreprocessingAgent()
 
     result = agent.run(
-        data_path=str(data_path),
-        prompt=prompt,
-        pipeline_state=plan_state,
-        target_column=target_column,
-        feature_top_k=feature_top_k,
-        output_folder=output_folder,
+        data_path=state["data_path"],
+        prompt=state.get("prompt") or state.get("nl_query") or "preprocess the data",
+        pipeline_state=state,
+        target_column=state.get("target_column"),
+        feedback_context=_build_feedback_context(state),
     )
-    print("\n" + "=" * 70)
-    print("PREPROCESSING AGENT RESULT")
-    print("=" * 70)
-    print(f"Status: {result.get('status')}")
-    print(f"Modeling ready: {result.get('modeling_ready')}")
-    for blocker in result.get("modeling_blockers", []):
-        print(f"BLOCKER: {blocker}")
-    output = result.get("preprocessing_output", {})
-    feature_output = result.get("feature_engineering_output", {})
-    print(f"X_train: {output.get('X_train_path')}")
-    print(f"X_test: {output.get('X_test_path')}")
-    print(f"Readiness report: {output.get('readiness_path')}")
-    print(f"Engineered train: {feature_output.get('X_train_engineered_path')}")
-    print(f"Feature report: {feature_output.get('feature_report_path')}")
-    return 0 if result.get("status") == "success" else 1
+
+    return result
 
 
-if __name__ == "__main__":
-    raise SystemExit(_interactive_main())
+def preprocessing_checkpoint_node(state: PipelineState) -> dict:
+    """HITL checkpoint interrupt node for human-in-the-loop validation."""
+    logger.info("[PreprocessingCheckpoint] Interrupting for human review")
+
+    human_response: dict = interrupt({
+        "agent":        "preprocessing",
+        "agent_output": state["agent_outputs"].get("preprocessing", {}),
+    })
+
+    decision      = human_response.get("decision", "accept")
+    feedback_text = human_response.get("text", "")
+
+    updates: dict = {
+        "user_decision": decision,
+        "feedback_text":  feedback_text,
+    }
+
+    if decision == "feedback" and feedback_text:
+        history = list(state.get("feedback_history", []))
+        history.append({
+            "agent":         "preprocessing",
+            "feedback_text": feedback_text,
+            "iteration":     len([h for h in history if h["agent"] == "preprocessing"]) + 1,
+        })
+        updates["feedback_history"] = history
+
+    logger.info("[PreprocessingCheckpoint] decision=%s", decision)
+    return updates
+
+
+def route_after_preprocessing(state: PipelineState) -> str:
+    """LangGraph conditional edge router after the preprocessing node."""
+    flags = state["intent_flags"]
+    if flags.get("run_feature_engineering"):
+        return "feature_engineering_agent"
+    if flags.get("run_model_selection"):
+        return "model_selection_agent"
+    if flags.get("run_training"):
+        return "training_agent"
+    if flags.get("run_evaluation"):
+        return "evaluation_agent"
+    if flags.get("run_deployment"):
+        return "deployment_agent"
+    return "pipeline_done"

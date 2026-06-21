@@ -90,7 +90,7 @@ def preprocessing_validation(task, tool_input, prompt, data_path, llm, state=Non
         summary = {
             "dataset": str(Path(data_path).name),
             "target_column": pipeline_state.get("target_column"),
-            "task_type": pipeline_state.get("problem_type"),
+            "task_type": pipeline_state.get("problem_type") or pipeline_state.get("task_type"),
             "modeling_ready": readiness["modeling_ready"],
             "blockers": blockers,
             "train_rows": int(len(X_train)),
