@@ -139,7 +139,7 @@ class ControllerAgent:
         self.logger.info("[ControllerAgent] Building LangGraph pipeline…")
         self.app = build_graph()
         self.logger.info("[ControllerAgent] Pipeline ready.")
-
+        
     # ─────────────────────────────────────────────
     # Primary entry point
     # ─────────────────────────────────────────────
@@ -173,7 +173,7 @@ class ControllerAgent:
             raise ValueError("inputs['data_path'] is required")
         if not nl_query:
             raise ValueError("inputs['prompt'] or inputs['nl_query'] is required")
-
+   
         self.logger.info(
             "\n" + "=" * 60 + "\n"
             "D.T.D PIPELINE — NEW RUN\n"
@@ -188,7 +188,22 @@ class ControllerAgent:
         # If target_column was explicitly provided, pre-populate it so
         # Intent Detector uses it directly instead of inferring.
         initial_state = make_initial_state(data_path, nl_query)
+        print(f"[ControllerAgent] Initial state Flags: {initial_state.get('intent_flags')}")
         if target_column:
+            # Validate that target_column exists in the data
+            try:
+                import pandas as pd
+                df = pd.read_csv(data_path) if isinstance(data_path, str) else data_path
+                if target_column not in df.columns:
+                    raise ValueError(
+                        f"Target column '{target_column}' not found in data. "
+                        f"Available columns: {list(df.columns)}"
+                    )
+            except Exception as e:
+                self.logger.error(
+                    f"[ControllerAgent] Failed to validate target column '{target_column}': {e}"
+                )
+                raise
             initial_state["target_column"] = target_column
 
         # LangGraph config — thread_id is the resume key for MemorySaver
@@ -269,6 +284,20 @@ class ControllerAgent:
 
         try:
             final_state = self.app.invoke(input_or_command, config)
+        except (ValueError, TypeError) as e:
+            # Catch shape/length mismatch errors and provide detailed diagnostics
+            error_msg = str(e)
+            self.logger.error(f"[ControllerAgent] Data shape/type error: {error_msg}")
+            if "Lengths must match" in error_msg or "shapes" in error_msg.lower():
+                self.logger.error(
+                    "[ControllerAgent] This typically indicates a mismatch in array/dataframe lengths "
+                    "during a comparison or operation. Check target column alignment with data dimensions."
+                )
+            return {
+                "__error__": f"Data processing error: {error_msg}",
+                "__report_id__": run_id,
+                "__run_id__": run_id,
+            }
 
             # Check if execution paused on an interrupt (newer LangGraph returns interrupt state directly)
             if isinstance(final_state, dict) and final_state.get("__interrupt__"):
@@ -318,7 +347,6 @@ class ControllerAgent:
             self.logger.info("\n[ControllerAgent] Pipeline completed successfully.")
             self._log_summary(final_state)
             return final_state
-
         except GraphInterrupt as interrupt_event:
             # Extract what the checkpoint node surfaced via interrupt({...})
             interrupt_data = {}
@@ -389,6 +417,7 @@ class ControllerAgent:
         self.logger.info(f"Trained model    : {state.get('trained_model_path') or '—'}")
         self.logger.info(f"Model metrics    : {state.get('model_metrics') or '—'}")
         self.logger.info(f"Endpoint URL     : {state.get('endpoint_url') or '—'}")
+        self.logger.info(f"Intent flags     : {state.get('intent_flags') or '—'}")
         self.logger.info("─" * 54)
 
 
