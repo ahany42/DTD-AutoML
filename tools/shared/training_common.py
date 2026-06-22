@@ -410,5 +410,5 @@ def save_automl_results_json(
         dest.write_bytes(Path(model_path).read_bytes())
         saved["pickle"] = str(dest)
 
-    print(f"[save_automl_results] JSON → {json_path}")
+    print(f"[save_automl_results] JSON -> {json_path}")
     return saved

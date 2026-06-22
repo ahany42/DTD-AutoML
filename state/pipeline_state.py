@@ -270,8 +270,13 @@ def parse_tool_input(tool_input: Any) -> dict[str, Any]:
 
 
 def ensure_state(state: Any, data_path: str, prompt: str = "") -> dict[str, Any]:
-    if isinstance(state, dict) and state.get("data_path"):
-        return deepcopy(state)
+    if isinstance(state, dict):
+        s = deepcopy(state)
+        if not s.get("data_path") and data_path:
+            s["data_path"] = data_path
+        if not s.get("prompt") and prompt:
+            s["prompt"] = prompt
+        return s
     return empty_state(data_path, prompt)
 
 

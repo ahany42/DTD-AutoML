@@ -66,14 +66,14 @@ class TargetSuggestionAgent:
         n_unique = series.nunique()
 
         if not pd.api.types.is_numeric_dtype(series):
-            logger.info("[TargetSuggester] Non-numeric target → classification")
+            logger.info("[TargetSuggester] Non-numeric target -> classification")
             return "classification"
 
         if n_unique <= 20:
             logger.info(
-                "[TargetSuggester] %d unique values → classification", n_unique
+                "[TargetSuggester] %d unique values -> classification", n_unique
             )
             return "classification"
 
-        logger.info("[TargetSuggester] %d unique values → regression", n_unique)
+        logger.info("[TargetSuggester] %d unique values -> regression", n_unique)
         return "regression"

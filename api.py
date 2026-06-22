@@ -258,16 +258,15 @@ async def run_custom_pipeline(
         "report_id":     report_id,
         "prompt":        prompt,
     }
-    
-    logger = Logger()
+    loop = asyncio.get_event_loop()
 
-    controller = ControllerAgent(
-        logger=logger,
-        
-    )
+    def _run():
+        return _dynamic_controller.run(inputs)
 
     print("Received inputs for custom pipeline:", inputs)
-    result = controller.run(inputs)
+    result = await loop.run_in_executor(executor, _run)
+
+    _dynamic_persist_to_mongo(report_id, result)
 
     return {
         "status": "success",

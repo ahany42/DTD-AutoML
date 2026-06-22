@@ -240,6 +240,22 @@ class ControllerAgent:
 
         config = {"configurable": {"thread_id": run_id}}
 
+        # Check if the session exists in the checkpointer
+        try:
+            state_snapshot = self.app.get_state(config)
+            if state_snapshot is None:
+                self.logger.error(f"Session {run_id} not found.")
+                return {
+                    "__error__": f"Pipeline session '{run_id}' not found.",
+                    "__report_id__": run_id,
+                    "__run_id__": run_id,
+                }
+
+            self.logger.info(f"Checkpoint found.")
+            self.logger.info(state_snapshot)
+        except Exception as e:
+            self.logger.warning(f"Error checking state for run_id {run_id}: {e}")
+
         # Create resume command with human response
         # Include full feedback context for the graph to re-run agent if feedback provided
         resume_payload = {
@@ -269,7 +285,11 @@ class ControllerAgent:
 
         try:
             final_state = self.app.invoke(input_or_command, config)
+            snapshot = self.app.get_state(config)
 
+            self.logger.info("=" * 60)
+            self.logger.info(f"Snapshot after invoke = {snapshot}")
+            self.logger.info("=" * 60)
             # Check if execution paused on an interrupt (newer LangGraph returns interrupt state directly)
             if isinstance(final_state, dict) and final_state.get("__interrupt__"):
                 raw = final_state["__interrupt__"]
@@ -366,7 +386,8 @@ class ControllerAgent:
             return partial_state
 
         except Exception as exc:
-            self.logger.error(f"[ControllerAgent] Pipeline error: {exc}")
+            import traceback
+            self.logger.error(f"[ControllerAgent] Pipeline error: {exc}\n{traceback.format_exc()}")
             return {
                 "__error__": str(exc),
                 "__report_id__": run_id,
@@ -498,8 +519,6 @@ def main():
     parser = _build_cli_parser()
     args   = parser.parse_args()
 
-    agent = ControllerAgent()
-
     # ── Resume mode ───────────────────────────────────────────────────────────
     if args.resume:
         result = agent.resume(
@@ -536,7 +555,7 @@ def main():
                     data_path = "assets/data/Classification Datasets/Titanic-Dataset.csv"
         
         if not prompt:
-            prompt = "analyze this data and train a model"
+            prompt = "run full pipeline"
 
         result = agent.run({
             "data_path":     data_path,

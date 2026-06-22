@@ -291,6 +291,13 @@ def train_autogluon(
         time_limit=time_limit,
         presets=preset,
         hyperparameters=hyperparameters,
+        # Prevent Ray/Dynamic Stacking
+        dynamic_stacking=False,
+        auto_stack=False,
+
+        # Simpler and more stable on Windows
+        num_bag_folds=0,
+        num_stack_levels=0,
     )
     leaderboard = predictor.leaderboard(silent=True)
     best_model = leaderboard.iloc[0]["model"] if len(leaderboard) else "unknown"

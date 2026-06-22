@@ -56,11 +56,11 @@ def test_full_pipeline_hitl():
     
     while state.get("__interrupted__") and iteration < max_steps:
         paused_at = state.get("__paused_at__")
-        logger.info("\n" + "─" * 80)
-        logger.info(f"⏸ [HITL Checkpoint] Pipeline paused at agent: '{paused_at}'")
+        logger.info("\n" + "-" * 80)
+        logger.info(f"[PAUSED] [HITL Checkpoint] Pipeline paused at agent: '{paused_at}'")
         logger.info(f"Checkpoint Outputs preview:")
         logger.info(str(state.get("agent_outputs", {}).get(paused_at, {}))[:300] + "...")
-        logger.info("─" * 80)
+        logger.info("-" * 80)
         
         # Test simulated feedback for a specific agent (e.g. preprocessing) to show feedback loops,
         # and then accept on the second try. Otherwise accept.
@@ -70,9 +70,9 @@ def test_full_pipeline_hitl():
         if paused_at == "preprocessing" and not any(h.get("agent") == "preprocessing" for h in state.get("feedback_history", [])):
             decision = "feedback"
             feedback = "Please impute missing categorical columns with mode."
-            logger.info(f"🤖 [Simulated HITL] Injecting feedback loop back to '{paused_at}': '{feedback}'")
+            logger.info(f"[HITL] [Simulated HITL] Injecting feedback loop back to '{paused_at}': '{feedback}'")
         else:
-            logger.info(f"🤖 [Simulated HITL] Resuming with decision: 'accept'")
+            logger.info(f"[HITL] [Simulated HITL] Resuming with decision: 'accept'")
             
         # Resume the pipeline
         state = controller.resume(
@@ -84,11 +84,11 @@ def test_full_pipeline_hitl():
         
     logger.info("\n" + "=" * 80)
     if state.get("__error__"):
-        logger.error(f"❌ Pipeline failed with error: {state.get('__error__')}")
+        logger.error(f"[ERROR] Pipeline failed with error: {state.get('__error__')}")
     elif state.get("error"):
-        logger.error(f"❌ Pipeline failed with internal state error: {state.get('error')}")
+        logger.error(f"[ERROR] Pipeline failed with internal state error: {state.get('error')}")
     else:
-        logger.info("✅ Pipeline completed successfully!")
+        logger.info("[OK] Pipeline completed successfully!")
         logger.info(f"   Target column: {state.get('target_column')}")
         logger.info(f"   Task type:     {state.get('task_type')}")
         logger.info(f"   Trained model: {state.get('trained_model_path') or 'N/A'}")

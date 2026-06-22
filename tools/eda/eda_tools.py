@@ -509,5 +509,5 @@ def save_eda_report(report: Dict, output_dir: str, filename: str = "eda_report.j
     file_path = path / filename
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(report, f, indent=2, default=str)
-    logger.info("[EDATools] Report saved → %s", file_path)
+    logger.info("[EDATools] Report saved -> %s", file_path)
     return str(file_path)
