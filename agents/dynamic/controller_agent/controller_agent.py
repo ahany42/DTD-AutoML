@@ -22,7 +22,7 @@ What changed vs the old version:
          - Console output style matches the original
 
 How to run (CLI):
-    python agents/controller_agent.py \\
+    python agents/dynamic/controller_agent/controller_agent.py \\
         --data   path/to/dataset.csv \\
         --query  "train a classifier, target column is Survived" \\
         --target Survived
@@ -44,11 +44,11 @@ HITL resume (after an interrupt):
     )
 
     Or from the command line (after the graph printed a paused run_id):
-        python agents/controller_agent.py \\
+        python agents/dynamic/controller_agent/controller_agent.py \\
             --resume  run-001 \\
             --decision accept
 
-        python agents/controller_agent.py \\
+        python agents/dynamic/controller_agent/controller_agent.py \\
             --resume   run-001 \\
             --decision feedback \\
             --feedback "please also compute ROC curve"
@@ -258,10 +258,10 @@ class ControllerAgent:
         # Check if the session exists in the checkpointer
         try:
             state_snapshot = self.app.get_state(config)
-            if state_snapshot is None:
-                self.logger.error(f"Session {run_id} not found.")
+            if not state_snapshot or not state_snapshot.values or "data_path" not in state_snapshot.values:
+                self.logger.error(f"[ControllerAgent] Resume failed: Session {run_id} not found in checkpointer.")
                 return {
-                    "__error__": f"Pipeline session '{run_id}' not found.",
+                    "__error__": f"Pipeline session '{run_id}' not found. Note that because the checkpointer is in-memory, session state cannot be persisted across separate CLI process runs. Start a new run or run the API server (api.py) for persistent session resume support.",
                     "__report_id__": run_id,
                     "__run_id__": run_id,
                 }
@@ -397,22 +397,6 @@ class ControllerAgent:
                 "__run_id__": run_id,
             }
 
-            # Return a partial state so callers can inspect what ran so far
-            # Get current state snapshot from MemorySaver
-            try:
-                current_snapshot = self.app.get_state(
-                    {"configurable": {"thread_id": run_id}}
-                )
-                partial_state = dict(current_snapshot.values) if current_snapshot else {}
-            except Exception:
-                partial_state = {}
-
-            partial_state["__interrupted__"] = True
-            partial_state["__paused_at__"]   = agent_name
-            partial_state["__report_id__"]   = run_id
-            partial_state["__run_id__"]      = run_id
-            return partial_state
-
         except Exception as exc:
             import traceback
             self.logger.error(f"[ControllerAgent] Pipeline error: {exc}\n{traceback.format_exc()}")
@@ -456,29 +440,29 @@ EXAMPLES
 ────────
 
 Start a new full pipeline run:
-  python agents/controller_agent.py \\
+  python agents/dynamic/controller_agent/controller_agent.py \\
       --data   data/titanic.csv \\
       --query  "run full pipeline, predict survival" \\
       --target Survived
 
 Run only preprocessing + training:
-  python agents/controller_agent.py \\
+  python agents/dynamic/controller_agent/controller_agent.py \\
       --data  data/churn.csv \\
       --query "preprocess then train a classifier on the Churn column"
 
 Run with an explicit run_id (useful for reproducibility):
-  python agents/controller_agent.py \\
+  python agents/dynamic/controller_agent/controller_agent.py \\
       --data   data/titanic.csv \\
       --query  "full pipeline" \\
       --run-id my-experiment-01
 
 Resume after a HITL pause (accept):
-  python agents/controller_agent.py \\
+  python agents/dynamic/controller_agent/controller_agent.py \\
       --resume   run-4f3a9b12 \\
       --decision accept
 
 Resume after a HITL pause (feedback):
-  python agents/controller_agent.py \\
+  python agents/dynamic/controller_agent/controller_agent.py \\
       --resume   run-4f3a9b12 \\
       --decision feedback \\
       --feedback "please also generate a correlation heatmap"
@@ -594,22 +578,45 @@ def main():
             "report_id":     args.run_id,
         })
 
-    # ── Output ────────────────────────────────────────────────────────────────
-    if result.get("__interrupted__"):
-        print(f"\n⏸  Pipeline paused at: {result['__paused_at__']}")
-        print(f"   run_id: {result['__run_id__']}")
-        print("\n   To accept:   python agents/controller_agent.py "
-              f"--resume {result['__run_id__']} --decision accept")
-        print("   To provide feedback:  python agents/controller_agent.py "
-              f"--resume {result['__run_id__']} --decision feedback "
-              "--feedback \"your note\"")
-        sys.exit(0)
+    # ── Output / Interactive loop ──────────────────────────────────────────────
+    while result.get("__interrupted__"):
+        paused_at = result["__paused_at__"]
+        run_id    = result["__run_id__"]
+        
+        print(f"\n[PAUSED] Pipeline paused at checkpoint: {paused_at}")
+        print(f"   run_id: {run_id}")
+        print("-" * 50)
+        
+        try:
+            choice = input("Enter decision ('accept' / 'feedback') or 'exit' to quit: ").strip().lower()
+            if choice == "exit":
+                print("\nExiting. Note: Since the checkpointer is in-memory, you will not be able to resume this session from a new CLI run. Use the web UI/API to resume persistent runs.")
+                sys.exit(0)
+            while choice not in ("accept", "feedback"):
+                choice = input("Invalid entry. Enter 'accept', 'feedback', or 'exit': ").strip().lower()
+                if choice == "exit":
+                    print("\nExiting.")
+                    sys.exit(0)
+                    
+            feedback_text = ""
+            if choice == "feedback":
+                feedback_text = input("Enter your feedback note: ").strip()
+                
+            print(f"\nResuming pipeline with decision '{choice}'...")
+            result = agent.resume(
+                run_id=run_id,
+                decision=choice,
+                feedback_text=feedback_text,
+            )
+        except KeyboardInterrupt:
+            print("\nExiting.")
+            sys.exit(0)
 
     if result.get("__error__"):
-        print(f"\n❌  Pipeline error: {result['__error__']}")
+        print(f"\n[ERROR] Pipeline error: {result['__error__']}")
         sys.exit(1)
 
-    print("\n✅  Pipeline complete.")
+    print("\n[OK] Pipeline complete.")
     print(f"   Target column : {result.get('target_column')}")
     print(f"   Task type     : {result.get('task_type')}")
     print(f"   Trained model : {result.get('trained_model_path') or '—'}")
