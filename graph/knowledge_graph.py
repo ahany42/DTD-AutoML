@@ -5,41 +5,31 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv()
-
-_MONGO_URI = os.getenv("MONGO_URI")
-_MONGO_DB  = os.getenv("MONGO_DB")
-
-# MongoDB is optional — when not configured, knowledge-graph storage becomes
-# a no-op instead of crashing every module that imports this file
-# (intent_detector.py imports it unconditionally).
-reports_collection = None
-if _MONGO_URI and _MONGO_DB:
-    try:
-        client = MongoClient(_MONGO_URI)
-        db = client[_MONGO_DB]
-        reports_collection = db["reports"]
-    except Exception as e:
-        print(f"[KnowledgeGraph] MongoDB connection failed, storage disabled: {e}")
-else:
-    print("[KnowledgeGraph] MONGO_URI/MONGO_DB not set — knowledge-graph storage disabled.")
-
+client = MongoClient(os.getenv("MONGO_URI"))
+db = client[os.getenv("MONGO_DB")]
+reports_collection = db["reports"]
 
 def store_initial_knowledge_graph(state: dict, run_id: str = None) -> list:
     """
     Called after IntentDetectorAgent.
     Saves the selected workflow stages to MongoDB.
     """
+
+    # knowledge_graph = [
+    #     flag
+    #     for flag, value in state.get("intent_flags", {}).items()
+    #     if value
+    # ]
     knowledge_graph = [
         flag
         for flag, value in state.get("intent_flags", {}).items()
-        if flag.startswith("run_") and value is True
+        if value is True
     ]
 
-    if reports_collection is None:
-        return knowledge_graph
+    # drop only the last selected flag and keep the others
+    # knowledge_graph = knowledge_graph[:-1]
 
     if run_id:
-        print(f"[KnowledgeGraph] Saving knowledge graph for run_id: {run_id}")
         try:
             query = (
                 {"_id": ObjectId(run_id)}
