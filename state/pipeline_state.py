@@ -111,6 +111,9 @@ class PipelineState(TypedDict):
     # Keys match agent names: "eda", "preprocessing", "feature_engineering", etc.
     agent_outputs: dict
 
+    # ── Initial Knowledge Graph ───────────────────────────────────────────────
+    knowledge_graph: Optional[list]
+
 
 # ─────────────────────────────────────────────
 # Empty state factory
@@ -212,6 +215,7 @@ def make_initial_state(data_path: str, nl_query: str) -> PipelineState:
 
         error=None,
         agent_outputs={},
+        knowledge_graph=None,
     )
 
 

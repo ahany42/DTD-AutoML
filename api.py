@@ -81,6 +81,7 @@ def _dynamic_state_to_response(state: dict, run_id: str) -> dict:
             # The full output of the just-completed agent, ready for rendering
             "agent_output": agent_out,
             "intent_flags": state.get("intent_flags"),
+            "knowledge_graph": state.get("knowledge_graph"),
         }
     else:
         res = {
@@ -95,6 +96,7 @@ def _dynamic_state_to_response(state: dict, run_id: str) -> dict:
                 # All per-agent outputs for the frontend panels
                 "agent_outputs":      state.get("agent_outputs", {}),
                 "intent_flags":       state.get("intent_flags"),
+                "knowledge_graph":    state.get("knowledge_graph"),
             },
         }
     return _sanitize_json_values(res)

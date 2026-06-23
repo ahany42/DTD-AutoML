@@ -26,6 +26,7 @@ from typing import Optional, Literal
 from graph.knowledge_graph import store_initial_knowledge_graph
 from pydantic import BaseModel, Field
 from langchain_core.messages import SystemMessage, HumanMessage
+from langchain_core.runnables import RunnableConfig
 from tools.shared import (
     extract_schema,
     TargetSuggestionAgent,
@@ -74,12 +75,12 @@ class IntentDetectorAgent:
         self.llm   = base_llm.with_structured_output(IntentFlags)
         self.suggester = TargetSuggestionAgent()
 
-    def run(self, data_path: str, nl_query: str) -> dict:
+    def run(self, data_path: str, nl_query: str, run_id: Optional[str] = None) -> dict:
         """
         Execute Agent 0 and return a partial PipelineState dict.
 
         Returns dict with keys:
-            intent_flags, target_column, task_type
+            intent_flags, target_column, task_type, knowledge_graph
         """
         logger.info("[IntentDetector] query=%r | file=%s", nl_query, data_path)
 
@@ -106,7 +107,7 @@ class IntentDetectorAgent:
             HumanMessage(content=prompts.user),
         ])
         
-        store_initial_knowledge_graph( state={"intent_flags": flags.model_dump()})
+        knowledge_graph = store_initial_knowledge_graph(state={"intent_flags": flags.model_dump()}, run_id=run_id)
         print(f"[IntentDetector] flags={flags.model_dump()}")
         logger.info("[IntentDetector] flags=%s", flags.model_dump())
 
@@ -133,6 +134,7 @@ class IntentDetectorAgent:
             "intent_flags":  flags.model_dump(),
             "target_column": target_column,
             "task_type":     flags.task_type,
+            "knowledge_graph": knowledge_graph,
         }
 
 
@@ -140,21 +142,23 @@ class IntentDetectorAgent:
 # LangGraph node function
 # ─────────────────────────────────────────────
 
-def intent_detector_node(state: PipelineState) -> dict:
+def intent_detector_node(state: PipelineState, config: RunnableConfig) -> dict:
     """
     LangGraph node for Agent 0.
 
     Reads:   state["data_path"], state["nl_query"]
-    Returns: partial state dict with intent_flags, target_column, task_type.
+    Returns: partial state dict with intent_flags, target_column, task_type, knowledge_graph.
              LangGraph merges this into the full PipelineState automatically.
 
     No interrupt() — this node never pauses for human input.
     After this node graph_builder wires a conditional edge to route_after_intent().
     """
     agent = IntentDetectorAgent()
+    run_id = config.get("configurable", {}).get("thread_id")
     return agent.run(
         data_path=state["data_path"],
         nl_query=state["nl_query"],
+        run_id=run_id,
     )
 
 

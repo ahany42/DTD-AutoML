@@ -9,7 +9,7 @@ client = MongoClient(os.getenv("MONGO_URI"))
 db = client[os.getenv("MONGO_DB")]
 reports_collection = db["reports"]
 
-def store_initial_knowledge_graph( state: dict) -> list:
+def store_initial_knowledge_graph(state: dict, run_id: str = None) -> list:
     """
     Called after IntentDetectorAgent.
     Saves the selected workflow stages to MongoDB.
@@ -21,15 +21,13 @@ def store_initial_knowledge_graph( state: dict) -> list:
     #     if value
     # ]
     knowledge_graph = [
-    flag
-    for flag, value in state.get("intent_flags", {}).items()
-    if flag.startswith("run_") and value is True
-]
+        flag
+        for flag, value in state.get("intent_flags", {}).items()
+        if flag.startswith("run_") and value is True
+    ]
 
     # drop only the last selected flag and keep the others
     # knowledge_graph = knowledge_graph[:-1]
-
-    run_id = "6a395d519b0c281d5031ad4f"  # Replace with actual run_id if available
 
     if run_id:
         try:
