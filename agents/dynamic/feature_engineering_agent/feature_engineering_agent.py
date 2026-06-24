@@ -9,6 +9,7 @@ from state.pipeline_state import PipelineState
 from tools.feature_engineering import feature_engineering_execution
 from tools.shared import get_llm
 from src.utils.logger import Logger
+from graph.knowledge_graph import update_agent_progress
 
 logger = logging.getLogger(__name__)
 
@@ -34,11 +35,44 @@ class FeatureEngineeringAgent:
         enabled = bool(feature_plan.get("enabled", top_k > 0)) and top_k > 0
 
         outputs = dict(pipeline_state.get("agent_outputs", {}))
+        run_id = pipeline_state.get("run_id")
+        sub_nodes = [
+            {"name": "Check Plan", "description": "Checking preprocessing plan configuration for feature engineering.", "status": "pending"},
+            {"name": "Proposal", "description": "Generating mathematical candidate feature combinations.", "status": "pending"},
+            {"name": "Evaluation", "description": "Calculating correlation scores of candidate features against target.", "status": "pending"},
+            {"name": "Selection", "description": "Filtering top-performing engineered features.", "status": "pending"},
+            {"name": "Save Data", "description": "Saving engineered train and test datasets.", "status": "pending"}
+        ]
+        agent_output = {
+            "status": "running",
+            "sub_nodes": sub_nodes
+        }
+
+        # Initialize progress in DB
+        update_agent_progress(run_id, "feature_engineering", agent_output)
+
+        def update_step(name: str, status: str, description: str = None):
+            for node in sub_nodes:
+                if node["name"] == name:
+                    node["status"] = status
+                    if description:
+                        node["description"] = description
+                    break
+            update_agent_progress(run_id, "feature_engineering", agent_output)
+
         if not enabled:
+            update_step("Check Plan", "completed", "Feature engineering disabled by preprocessing plan.")
+            for node in sub_nodes[1:]:
+                node["status"] = "skipped"
+            agent_output["status"] = "skipped"
+            agent_output["sub_nodes"] = sub_nodes
+            update_agent_progress(run_id, "feature_engineering", agent_output)
+
             output = {
                 "status": "skipped",
                 "message": "Feature engineering disabled by preprocessing plan.",
                 "top_k": top_k,
+                "sub_nodes": sub_nodes
             }
             outputs["feature_engineering"] = output
             pipeline_state["agent_outputs"] = outputs
@@ -53,8 +87,19 @@ class FeatureEngineeringAgent:
         }
         missing = [name for name, value in required_paths.items() if not value or not Path(value).exists()]
         if missing:
+            update_step("Check Plan", "failed", f"Failed: missing split files: {', '.join(missing)}")
+            for node in sub_nodes[1:]:
+                node["status"] = "skipped"
+            agent_output["status"] = "failed"
+            agent_output["sub_nodes"] = sub_nodes
+            update_agent_progress(run_id, "feature_engineering", agent_output)
+
             message = "Feature engineering requires completed preprocessing splits; missing: " + ", ".join(missing)
-            output = {"status": "error", "error": message}
+            output = {
+                "status": "error",
+                "error": message,
+                "sub_nodes": sub_nodes
+            }
             outputs["feature_engineering"] = output
             pipeline_state["agent_outputs"] = outputs
             pipeline_state["step"] = "feature_engineering_failed"
@@ -71,6 +116,10 @@ class FeatureEngineeringAgent:
             (pipeline_state.get("preprocessing_output") or {}).get("output_folder")
             or str(Path(required_paths["X_train_path"]).parent)
         )
+
+        update_step("Check Plan", "completed", f"Feature engineering enabled (top_k={top_k}, max_candidates={max_candidates}).")
+        update_step("Proposal", "running")
+        update_step("Evaluation", "running")
 
         self.logger.info("[FeatureEngineeringAgent] Running feature engineering...")
         result, new_state = feature_engineering_execution.invoke({
@@ -91,18 +140,38 @@ class FeatureEngineeringAgent:
         outputs = dict(new_state.get("agent_outputs", {}))
         if result.get("status") == "success":
             feature_output = result.get("feature_engineering_output") or new_state.get("feature_engineering_output") or {}
-            outputs["feature_engineering"] = {
+            selected_features = feature_output.get("selected_features", [])
+
+            update_step("Proposal", "completed", "Proposed candidate mathematical feature combinations.")
+            update_step("Evaluation", "completed", "Calculated Pearson correlation scores against training target.")
+            update_step("Selection", "completed", f"Selected the best {len(selected_features)} features: {', '.join(selected_features)}.")
+            update_step("Save Data", "completed", f"Saved engineered training and testing datasets to: {output_folder}.")
+
+            agent_output = {
                 "status": "success",
                 "message": result.get("message"),
                 **feature_output,
+                "sub_nodes": sub_nodes
             }
+            update_agent_progress(run_id, "feature_engineering", agent_output)
+
+            outputs["feature_engineering"] = agent_output
             new_state["agent_outputs"] = outputs
             new_state["status"] = "success"
             return new_state
 
+        err_msg = result.get("error", "Feature engineering failed.")
+        update_step("Proposal", "failed", f"Failed: {err_msg}")
+        for node in sub_nodes[2:]:
+            node["status"] = "skipped"
+        agent_output["status"] = "failed"
+        agent_output["sub_nodes"] = sub_nodes
+        update_agent_progress(run_id, "feature_engineering", agent_output)
+
         outputs["feature_engineering"] = {
             "status": "error",
-            "error": result.get("error", "Feature engineering failed."),
+            "error": err_msg,
+            "sub_nodes": sub_nodes
         }
         new_state["agent_outputs"] = outputs
         return new_state
