@@ -400,7 +400,8 @@ def preprocessing_node(state: PipelineState) -> dict:
 def route_after_preprocessing(state: PipelineState) -> str:
     """LangGraph conditional edge router after the preprocessing node."""
     flags = state["intent_flags"]
-    if flags.get("feature_engineering"):
+    feature_plan = (state.get("preprocessing_plan") or {}).get("feature_engineering") or {}
+    if flags.get("feature_engineering") or feature_plan.get("enabled"):
         return "feature_engineering_agent"
     if flags.get("model_selection"):
         return "model_selection_agent"

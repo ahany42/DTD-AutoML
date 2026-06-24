@@ -38,9 +38,9 @@ from agents.dynamic.controller_agent.controller_agent import ControllerAgent
 from src.utils.logger import Logger
 
 AGENT_NAME     = "preprocessing"
-DEFAULT_DATA   = str(PROJECT_ROOT / "assets/data/Datasets/Classification Datasets/Iris.csv")
-DEFAULT_TARGET = "species"
-DEFAULT_QUERY  = "Run EDA and preprocessing on this dataset. Do not run model selection, training, or evaluation."
+DEFAULT_DATA   = str(PROJECT_ROOT / "assets/data/Classification Datasets/Titanic/Titanic-Dataset.csv")
+DEFAULT_TARGET = "Survived"
+DEFAULT_QUERY  = "Run EDA and preprocessing and feature Engineering on this dataset. Do not run model selection, training, or evaluation."
 
 
 def main():
