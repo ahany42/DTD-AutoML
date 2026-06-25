@@ -397,13 +397,19 @@ class ControllerAgent:
             # Catch shape/length mismatch errors and provide detailed diagnostics
             error_msg = str(e)
             self.logger.error(f"[ControllerAgent] Data shape/type error: {error_msg}")
+            import traceback
+            self.logger.error(
+        "[ControllerAgent] Actual error:\n%s",
+        traceback.format_exc()
+    )
             if "Lengths must match" in error_msg or "shapes" in error_msg.lower():
                 self.logger.error(
                     "[ControllerAgent] This typically indicates a mismatch in array/dataframe lengths "
                     "during a comparison or operation. Check target column alignment with data dimensions."
                 )
             return {
-                "__error__": f"Data processing error: {error_msg}",
+                "__error__": f"Data processing error: {error_msg}",\
+                "__traceback__": traceback.format_exc(),
                 "__report_id__": run_id,
                 "__run_id__": run_id,
             }
@@ -568,7 +574,7 @@ def main():
         target_column = args.target
 
         if not data_path:
-            default_path = _PROJECT_ROOT / "assets/data/Classification Datasets/Titanic-Dataset.csv"
+            default_path = _PROJECT_ROOT / "benchmark/datasets/diabetes130/diabetic_data.csv"
             if default_path.exists():
                 data_path = str(default_path)
             else:
@@ -576,7 +582,7 @@ def main():
                 if default_path_alt.exists():
                     data_path = str(default_path_alt)
                 else:
-                    data_path = "assets/data/Classification Datasets/Titanic-Dataset.csv"
+                    data_path = "benchmark/datasets/diabetes130/diabetic_data.csv"
         
         if not prompt:
             prompt = "run analysis, preprocessing and training"

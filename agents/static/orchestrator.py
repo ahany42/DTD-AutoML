@@ -32,8 +32,8 @@ load_dotenv()
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 ORCHESTRATOR_CONFIG = {
-    "data_path": str(PROJECT_ROOT / "assets/data/Classification Datasets/Titanic-Dataset.csv"),
-    "target_column": "Survived",
+    "data_path": str(PROJECT_ROOT / "benchmark/datasets/Housing.csv"),
+    "target_column": "price",
     "preprocessing_output_root": str(PROJECT_ROOT / "Output" / "static" / "Preprocessing"),
     "use_preprocessing_llm": True,
 }
@@ -398,6 +398,7 @@ class DTDPipeline:
         try:
             # 4. Use run() so _save_outputs() is triggered automatically
             print(f"⏳ Training models for {target_col}...")
+            print("BEFORE RUN")
             final_subagent_state = automl_agent_instance.run(
                 data_path=state['clean_data_path'],
                 target_column=target_col,
@@ -406,6 +407,15 @@ class DTDPipeline:
                 problem_type=task_type,
               
             )
+            print("AFTER RUN")
+            print("RETURNED FROM RUN")
+            print(final_subagent_state.keys())
+            print("ERROR FIELD:", final_subagent_state.get("error"))
+
+            from collections import deque
+            for k, v in final_subagent_state.items():
+                if isinstance(v, deque):
+                    print(f"FOUND DEQUE: {k}")
 
             # 5. Capture results back into orchestrator state
             if final_subagent_state.get('error'):
@@ -453,18 +463,28 @@ class DTDPipeline:
                     },
                 }
 
+                print("checkpointt A")
+
                 state["agent_output"] = agent_output
- 
+
+                print("checkpointt B")
+
                 self.cache.save_stage(
-                    state["data_path"], state["target_column"],
-                    "automl_training", agent_output,
+                    state["data_path"],
+                    state["target_column"],
+                    "automl_training",
+                    agent_output,
                 )
- 
+
+                print("checkpointt C")
+
                 self.cache.finalize(
                     state["data_path"],
                     state["target_column"],
                     state,
                 )
+
+                print("checkpointt D")
 
                 print(
                     f"✅ Training complete. Best Model: {state['final_metrics'].get('best_model')}")
@@ -476,6 +496,10 @@ class DTDPipeline:
 
         except Exception as e:
             print(f"❌ Exception in Stage 4: {str(e)}")
+            import traceback
+
+            print("❌ Actual Exception in Stage 4:")
+            traceback.print_exc()
             state['error'] = f"AutoML Stage failed: {str(e)}"
             state["agent_output"] = {
                 "stage": "automl_training",

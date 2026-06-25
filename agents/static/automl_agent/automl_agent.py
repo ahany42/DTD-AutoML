@@ -33,9 +33,7 @@ from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 from dotenv import load_dotenv
 
 from src.utils.logger import Logger
-import hashlib
-from langgraph.cache.memory import InMemoryCache
-from langgraph.types import CachePolicy
+import hashlib 
 
 # Load environment variables
 load_dotenv()
@@ -76,120 +74,8 @@ class AutoMLAgent:
             model=model_name,
             google_api_key=os.getenv("GOOGLE_API_KEY"),
             temperature=0.3,
-        )
-        
-        
+        )        
         self.graph = self._build_graph()
-    
-    
-    @staticmethod
-    def _bucket_size(n_rows: int, n_cols: int) -> str:
-        if n_rows > 700_000:
-            return "large"
-        elif n_rows > 50_000:
-            return "medium"
-        return "small"
-
-    @staticmethod
-    def _bucket_ratio(ratio: float) -> str:
-        if ratio > 0.5:
-            return "high"
-        elif ratio > 0.2:
-            return "medium"
-        return "low"
-
-    def _selection_cache_key(self, state: AgentState) -> str:
-        """
-        LangGraph key_func: called by the graph runtime before executing
-        model_selection_agent. Returns a string key — same key = cache hit.
-        """
-        directives = state.get('automl_directives') or {}
-        report = directives.get('report') or {}
-        target_info = report.get('target_analysis') or {}
-        multicollinearity = report.get('multicollinearity') or {}
-        encoding_hints = report.get('encoding_hints') or {}
-        signal_analysis = report.get('signal_analysis') or {}
-        dataset_summary = report.get('dataset_summary') or {}
-
-        # Get size signals — use directives if data not loaded yet
-        data = state.get('data')
-        if data is not None:
-            n_rows = data.shape[0].compute() if isinstance(data, dd.DataFrame) else data.shape[0]
-            n_cols = data.shape[1]
-        else:
-            n_rows = dataset_summary.get('n_rows', 0)
-            n_cols = dataset_summary.get('n_columns', 0)
-
-        duplicate_ratio = (
-            report.get('data_quality_report', {})
-                .get('duplicates', {})
-                .get('duplicate_ratio', 0.0)
-        )
-
-        signature = {
-            "task_type":              state.get('problem_type'),
-            "skew_severity":          target_info.get('skew_severity', 'N/A'),
-            "multicollinearity_risk": len(multicollinearity.get('pairs', [])) > 3,
-            "encoding_needed":        bool(encoding_hints),
-            "signal_keys":            sorted(signal_analysis.keys()),
-            "size_bucket":            self._bucket_size(n_rows, n_cols),
-            "duplicate_bucket":       self._bucket_ratio(duplicate_ratio),
-        }
-
-        key_str = json.dumps(signature, sort_keys=True)
-        cache_key = hashlib.md5(key_str.encode()).hexdigest()
-        logger.info(f"[Cache] model_selection_agent key={cache_key[:8]}… signature={signature}")
-        return cache_key
-
-    def _training_cache_key(self, state: AgentState) -> str:
-        """Cache key for training_agent — based on what model was selected + data shape."""
-        directives = state.get('automl_directives') or {}
-        report = directives.get('report') or {}
-        dataset_summary = report.get('dataset_summary') or {}
-
-        data = state.get('data')
-        if data is not None:
-            n_rows = data.shape[0].compute() if isinstance(data, dd.DataFrame) else data.shape[0]
-            n_cols = data.shape[1]
-        else:
-            n_rows = dataset_summary.get('n_rows', 0)
-            n_cols = dataset_summary.get('n_columns', 0)
-
-        signature = {
-            "problem_type":    state.get('problem_type'),
-            "use_automl":      state.get('use_automl'),
-            "use_dask":        state.get('use_dask'),
-            "selected_models": sorted(state.get('selected_models') or []),
-            "automl_config":   json.dumps(state.get('automl_config') or {}, sort_keys=True),
-            "size_bucket":     self._bucket_size(n_rows, n_cols),
-        }
-
-        key_str = json.dumps(signature, sort_keys=True)
-        cache_key = hashlib.md5(key_str.encode()).hexdigest()
-        logger.info(f"[Cache] training_agent key={cache_key[:8]}… signature={signature}")
-        return cache_key
-
-
-    def _interpret_cache_key(self, state: AgentState) -> str:
-        """Cache key for _interpret_training_results — based on actual metrics."""
-        metrics = state.get('model_metrics') or {}
-
-        # Round score to 3dp so tiny float drift doesn't bust the cache
-        best_score = metrics.get('best_score')
-        best_score_rounded = round(best_score, 3) if isinstance(best_score, float) else best_score
-
-        signature = {
-            "training_method": metrics.get('training_method'),
-            "best_model":      metrics.get('best_model'),
-            "best_score":      best_score_rounded,
-            "use_automl":      state.get('use_automl'),
-            "confusion_matrix": str(metrics.get('confusion_matrix', '')),
-        }
-
-        key_str = json.dumps(signature, sort_keys=True)
-        cache_key = hashlib.md5(key_str.encode()).hexdigest()
-        logger.info(f"[Cache] interpret key={cache_key[:8]}… signature={signature}")
-        return cache_key
 
     def _build_graph(self) -> StateGraph:
         """Build the LangGraph AutoML workflow."""
@@ -202,8 +88,8 @@ class AutoMLAgent:
 
         # Specialized subagents
         # workflow.add_node("data_analysis_agent", self.data_analysis_agent)
-        workflow.add_node("model_selection_agent", self.model_selection_agent, cache_policy=CachePolicy(key_func=self._selection_cache_key))
-        workflow.add_node("training_agent", self.training_agent, cache_policy=CachePolicy(key_func=self._training_cache_key))
+        workflow.add_node("model_selection_agent", self.model_selection_agent)
+        workflow.add_node("training_agent", self.training_agent)
 
         # Define the flow
         workflow.set_entry_point("load_data")#start by loading data, defines the init state
@@ -213,7 +99,7 @@ class AutoMLAgent:
         workflow.add_edge("identify_target", "model_selection_agent")#then select the models
         workflow.add_edge("model_selection_agent", "training_agent")#then train the models
 
-        return workflow.compile(cache=InMemoryCache())
+        return workflow.compile()
 
     
     def should_use_automl(self, state: AgentState) -> Literal["automl", "simple"]:
@@ -417,7 +303,7 @@ class AutoMLAgent:
             reasoning = response.content
             
             # 5. Parse and update state
-            use_automl,use_dask, automl_config, selected_models = self._parse_automl_decision(
+            use_automl,use_dask, automl_config, selected_models = self._parse_automl_decision(state,
                 reasoning, state.get('data_summary', {}), task_type
             )
 
@@ -436,6 +322,11 @@ class AutoMLAgent:
 
         except Exception as e:
             logger.error(f"[Model Selection Agent] Error: {str(e)}")
+
+            import traceback
+            logger.error(
+                f"[Model Selection Agent] Error:\n{traceback.format_exc()}"
+            )
             state['error'] = f"Failed in model selection: {str(e)}"
             return state
 
@@ -857,7 +748,7 @@ Provide your analysis and decision:
 """
         return prompt
     
-    def _parse_automl_decision(self, reasoning: str, data_summary: dict, problem_type: str) -> tuple:
+    def _parse_automl_decision(self,state, reasoning: str, data_summary: dict, problem_type: str) -> tuple:
         """
         Parse LLM reasoning to extract AutoML decision and configuration.
         
@@ -867,6 +758,17 @@ Provide your analysis and decision:
         import re
         import json
         
+        # reasoning_lower = reasoning.lower()
+        # Normalize reasoning into a plain string
+        if isinstance(reasoning, list):
+            reasoning = " ".join(
+                item.get("text", str(item))
+                if isinstance(item, dict)
+                else str(item)
+                for item in reasoning
+            )
+
+        reasoning = str(reasoning)
         reasoning_lower = reasoning.lower()
         use_automl = None
         use_dask=None
@@ -880,16 +782,16 @@ Provide your analysis and decision:
             json_match = re.search(r'\{.*\}', reasoning, re.DOTALL)
             if json_match:
                 data = json.loads(json_match.group(0))
-                
+
                 # Check approach key (matches the new prompt)
                 approach = str(data.get("approach") or "").lower()
-                if "autogluon" in approach or rows < 1_000_000:
+                if "autogluon" in approach:
                     logger.info("[AutoML] Medium dataset detected")
 
                     use_automl = True
                     # state['use_dask'] = False
 
-                elif "simple" in approach or rows < 50000:
+                elif "simple" in approach:
                     logger.info("[AutoML] Small dataset detected")
                     use_automl = False
                     # state['use_dask'] = False
@@ -908,10 +810,37 @@ Provide your analysis and decision:
                             'preset': settings.get("preset_mode", 'best_quality')
                         }
                     else:
-                        if isinstance(state['data'], dd.DataFrame):
-                            selected_models = data.get("dask_models", [])
+                        dataset = state.get("data")
+                        key = (
+                            "dask_models"
+                            if isinstance(dataset, dd.DataFrame)
+                            else "simple_models"
+                        )
+                        raw_models = data.get(key, [])
+                        if isinstance(raw_models, str):
+                            selected_models = [raw_models.strip()]
+
+                        elif isinstance(raw_models, list):
+                            selected_models = [
+                                str(m).strip()
+                                for m in raw_models
+                                if m is not None and str(m).strip()
+                            ]
                         else:
-                            selected_models = data.get("simple_models", [])
+                            selected_models = []
+                        # if isinstance(state['data'], dd.DataFrame):
+                        #     selected_models = data.get("dask_models", [])
+                        # else:
+                        #     # selected_models = data.get("simple_models", [])
+                        #     raw_models = data.get("simple_models")
+                        #     selected_models = (
+                        #         [str(m).strip() for m in raw_models if m]
+                        #         if isinstance(raw_models, list)
+                        #         else [raw_models.strip()]
+                        #         if isinstance(raw_models, str) and raw_models.strip()
+                        #         else []
+                        #     )
+
         except Exception as e:
             logger.warn(f"JSON parsing failed, falling back to regex: {e}")
 
@@ -1900,6 +1829,27 @@ Provide your analysis and decision:
         'human_approved': None,
     }
         logger.info("Starting AutoML agent workflow")
+        import collections
+
+        def contains_deque(obj, path="root"):
+            if isinstance(obj, collections.deque):
+                print("FOUND DEQUE:", path)
+                return True
+
+            if isinstance(obj, dict):
+                for k, v in obj.items():
+                    contains_deque(v, f"{path}.{k}")
+
+            elif isinstance(obj, (list, tuple, set)):
+                for i, v in enumerate(obj):
+                    contains_deque(v, f"{path}[{i}]")
+
+            elif hasattr(obj, "__dict__"):
+                for k, v in vars(obj).items():
+                    contains_deque(v, f"{path}.{k}")
+            return False
+
+        contains_deque(initial_state)
         final_state = self.graph.invoke(initial_state)
 
         if final_state.get('error'):

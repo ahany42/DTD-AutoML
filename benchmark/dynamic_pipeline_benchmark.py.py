@@ -12,27 +12,31 @@ if str(PROJECT_ROOT) not in sys.path:
 from dotenv import load_dotenv
 from agents.dynamic.controller_agent.controller_agent import ControllerAgent
 load_dotenv()
+import os
 
 os.environ["LANGCHAIN_TRACING_V2"] = "true"
 os.environ["LANGCHAIN_PROJECT"] = "DTD-Dynamic-Benchmark"
+print("LANGCHAIN_TRACING_V2 =", os.getenv("LANGCHAIN_TRACING_V2"))
+print("LANGCHAIN_PROJECT =", os.getenv("LANGCHAIN_PROJECT"))
+print("LANGCHAIN_API_KEY exists =", bool(os.getenv("LANGCHAIN_API_KEY")))
 
 PROMPTS = [
     "Run full AutoML pipeline including preprocessing, model training and evaluation",
 
     # "Run full AutoML pipeline including preprocessing, model training and evaluation. Prioritize interpretability.",
 
-    "Run full AutoML pipeline including preprocessing, model training and evaluation. Prioritize predictive accuracy.",
+    # "Run full AutoML pipeline including preprocessing, model training and evaluation. Prioritize predictive accuracy.",
 
-    "Run full AutoML pipeline including preprocessing, model training and evaluation. Use lightweight models suitable for deployment.",
+    # "Run full AutoML pipeline including preprocessing, model training and evaluation. Use lightweight models suitable for deployment.",
 
     # "Run full AutoML pipeline including preprocessing, model training and evaluation. Avoid feature selection."
 ]
 
 DATASETS = [
-    {
-        "path": "benchmark/datasets/Housing.csv",
-        "target": "price",
-    },
+    # {
+    #     "path": "benchmark/datasets/Housing.csv",
+    #     "target": "price",
+    # },
     {
         "path": "benchmark/datasets/diabetes130/diabetic_data.csv",
         "target": "diabetesMed",
