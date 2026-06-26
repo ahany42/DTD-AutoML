@@ -25,16 +25,14 @@ MONGO_DB = os.getenv("MONGO_DB")
 app = FastAPI()
 pipeline_instance = DTDPipeline()
 
-# --- Upload directory ---
 BASE_DIR = Path(__file__).resolve().parent
 UPLOAD_DIR = BASE_DIR / "uploads"
 UPLOAD_DIR.mkdir(exist_ok=True)
 
-PLOT_OUTPUT_DIR = BASE_DIR.parents[2] / "Output"
+PLOT_OUTPUT_DIR = Path("D:/Automl/GP/output")
 PLOT_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-app.mount("/Output", StaticFiles(directory=str(PLOT_OUTPUT_DIR)), name="plot_output")
+app.mount("/output", StaticFiles(directory=str(PLOT_OUTPUT_DIR)), name="plot_output")
 
-# --- Mongo connection ---
 client = MongoClient(MONGO_URI)
 db = client[MONGO_DB]
 reports_collection = db["reports"]
@@ -222,17 +220,13 @@ async def run_pipeline(
                      "error": str(exc), "cache_hit": False, "_state": {}},
                 )
             finally:
-                # Sentinel: signals the async consumer that the pipeline is done
                 loop.call_soon_threadsafe(queue.put_nowait, None)
 
-        # Fire the pipeline in the background — don't await it here
         executor.submit(run_pipeline_in_thread)
-
-        # Consume events as they arrive; each await unblocks the SSE flush
         while True:
-            event = await queue.get()   # blocks only until the next stage finishes
+            event = await queue.get()   
             if event is None:
-                break                   # sentinel → pipeline done
+                break                  
 
             node_name = event["node_name"]
             agent_output = event["agent_output"]
@@ -241,7 +235,6 @@ async def run_pipeline(
 
             print(f"Streaming: {node_name}  (cache_hit={cache_hit})")
 
-            # Record start_time once
             if not start_recorded:
                 reports_collection.update_one(
                     {"_id": ObjectId(report_id)},
@@ -249,7 +242,6 @@ async def run_pipeline(
                 )
                 start_recorded = True
 
-            # Mirror to Mongo (skip the cache_check banner — it has no output)
             if agent_output is not None:
                 reports_collection.update_one(
                     {"_id": ObjectId(report_id)},
@@ -265,7 +257,6 @@ async def run_pipeline(
                 "reportId":  report_id,
             }
             yield f"data: {json.dumps(payload, default=str)}\n\n"
-            # No sleep needed — queue.get() already yields control each iteration
 
         end_time = datetime.utcnow()
         report   = reports_collection.find_one({"_id": ObjectId(report_id)})
@@ -313,10 +304,15 @@ async def run_custom_pipeline(
 
     _dynamic_persist_to_mongo(report_id, result)
 
-    return {
-        "status": "success",
-        "result": result,
-    }
+    def event_generator():
+        states = result.get("states") if isinstance(result, dict) else None
+        if states and isinstance(states, list):
+            for st in states:
+                payload = {"status": "state_completed", "state": st, "reportId": report_id, "datasetId": dataset_id}
+                yield f"data: {json.dumps(payload, default=str)}\n\n"
+        yield f"data: {json.dumps({'status': 'completed', 'reportId': report_id, 'datasetId': dataset_id, 'result': result}, default=str)}\n\n"
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 @app.post("/dynamic/run/{report_id}")
 async def dynamic_run_pipeline(
@@ -354,8 +350,9 @@ async def dynamic_run_pipeline(
         return _dynamic_controller.run({
             "data_path":     str(file_path),
             "prompt":        prompt,
-            "target_column": target_column,   # None → Intent Detector will infer
-            "report_id":     report_id,        # doubles as thread_id in MemorySaver
+             # None → Intent Detector will infer
+            "target_column": target_column,  
+            "report_id":     report_id,      
         })
 
     state = await loop.run_in_executor(executor, _run)
@@ -366,8 +363,10 @@ async def dynamic_run_pipeline(
 @app.post("/dynamic/resume/{run_id}")
 async def dynamic_resume_pipeline(
     run_id:        str,
-    decision:      str = Form(...),   # "accept" | "feedback"
-    feedback_text: str = Form(""),    # only used when decision == "feedback"
+    # "accept" | "feedback"
+    decision:      str = Form(...), 
+    # only used when decision == "feedback"  
+    feedback_text: str = Form(""),    
 ):
     """
     Resume a paused HITL checkpoint.
