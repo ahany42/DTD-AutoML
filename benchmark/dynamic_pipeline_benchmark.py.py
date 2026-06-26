@@ -20,33 +20,35 @@ print("LANGCHAIN_TRACING_V2 =", os.getenv("LANGCHAIN_TRACING_V2"))
 print("LANGCHAIN_PROJECT =", os.getenv("LANGCHAIN_PROJECT"))
 print("LANGCHAIN_API_KEY exists =", bool(os.getenv("LANGCHAIN_API_KEY")))
 
-# "Run full AutoML pipeline including preprocessing, model training and evaluation. Prioritize interpretability.",
-# "Run full AutoML pipeline including preprocessing, model training and evaluation. Use lightweight models suitable for deployment.",
-# "Run full AutoML pipeline including preprocessing, model training and evaluation. Avoid feature selection."
 
 REG_PROMPTS = [
     "Run full AutoML pipeline including preprocessing, model training and evaluation, the target column is price",
     "Run full AutoML pipeline including preprocessing, model training and evaluation. Prioritize predictive accuracy, the target column is price.",
+    # "Run full AutoML pipeline including preprocessing, model training and evaluation. Prioritize interpretability.",
+    # "Run full AutoML pipeline including preprocessing, model training and evaluation. Use lightweight models suitable for deployment.",
+    # "Run full AutoML pipeline including preprocessing, model training and evaluation. Avoid feature selection."
 ]
 
 CLS_PROMPTS = [
-    "Run full AutoML pipeline including preprocessing, model training and evaluation, the target column is diabetesMed",
-    # "Run full AutoML pipeline including preprocessing, model training and evaluation. Prioritize predictive accuracy, the target column is diabetesMed.",
+    "Run full AutoML pipeline including preprocessing, model training and evaluation, the target column is Churn",
+    "Run full AutoML pipeline including preprocessing, model training and evaluation. Prioritize predictive accuracy, the target column is Churn.",
 ]
 
 BENCHMARKS = [
-    # {
-    #     "dataset": {
-    #         "path": "benchmark/datasets/Housing.csv",
-    #         "target": "price",
-    #     },
-    #     "prompts": REG_PROMPTS,
-    #     "type": "regression",
-    # },
     {
         "dataset": {
-            "path": "benchmark/datasets/diabetes130/diabetic_data.csv",
-            "target": "diabetesMed",
+            "path": "benchmark/datasets/Housing.csv",
+            "target": "price",
+        },
+        "prompts": REG_PROMPTS,
+        "type": "regression",
+    },
+    {
+        "dataset": {
+            # "path": "benchmark/datasets/diabetes130/diabetic_data.csv",
+            # "target": "diabetesMed",
+            "path": "benchmark/datasets/WA_Fn-UseC_-Telco-Customer-Churn.csv",
+            "target": "Churn",
         },
         "prompts": CLS_PROMPTS,
         "type": "classification",
