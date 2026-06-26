@@ -25,16 +25,14 @@ MONGO_DB = os.getenv("MONGO_DB")
 app = FastAPI()
 pipeline_instance = DTDPipeline()
 
-# --- Upload directory ---
 BASE_DIR = Path(__file__).resolve().parent
 UPLOAD_DIR = BASE_DIR / "uploads"
 UPLOAD_DIR.mkdir(exist_ok=True)
 
-PLOT_OUTPUT_DIR = BASE_DIR.parents[2] / "Output"
+PLOT_OUTPUT_DIR = Path("D:/Automl/GP/output")
 PLOT_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-app.mount("/Output", StaticFiles(directory=str(PLOT_OUTPUT_DIR)), name="plot_output")
+app.mount("/output", StaticFiles(directory=str(PLOT_OUTPUT_DIR)), name="plot_output")
 
-# --- Mongo connection ---
 client = MongoClient(MONGO_URI)
 db = client[MONGO_DB]
 reports_collection = db["reports"]
@@ -110,22 +108,25 @@ def _dynamic_state_to_response(state: dict, run_id: str) -> dict:
 def _dynamic_persist_to_mongo(report_id: str, state: dict) -> None:
     """Mirror dynamic pipeline state fields into the existing MongoDB document."""
     try:
+        persist_timestamp = datetime.utcnow()
         agent_outputs = state.get("agent_outputs", {})
         status = (
             "paused"    if state.get("__interrupted__") else
             "error"     if state.get("__error__")       else
             "completed"
         )
+        print(f"[API][TRACE] _dynamic_persist_to_mongo() called: report_id={report_id}, status={status}, persist_timestamp={persist_timestamp}")
 
         # Sanitize full pipeline state for MongoDB persistence to avoid non-BSON errors
         try:
             serialized_state = json.loads(json.dumps(state, default=str))
+            print(f"[API][TRACE] State serialization successful for report_id={report_id}")
         except Exception as e:
-            print(f"[API][dynamic] State serialization error: {e}")
+            print(f"[API][ERROR] State serialization error for report_id={report_id}: {e}")
             serialized_state = state
 
         update = {
-            "updated_at":    datetime.utcnow(),
+            "updated_at":    persist_timestamp,
             "target_column": state.get("target_column"),
             "task_type":     state.get("task_type"),
             "dynamic_status": status,
@@ -135,13 +136,40 @@ def _dynamic_persist_to_mongo(report_id: str, state: dict) -> None:
         for agent_name, output in agent_outputs.items():
             update[f"report.{agent_name}"] = output
 
-        reports_collection.update_one(
+        print(f"[API][TRACE] Updating MongoDB for report_id={report_id} with keys: {list(update.keys())}")
+        result = reports_collection.update_one(
             {"_id": ObjectId(report_id)},
             {"$set": update},
             upsert=True,
         )
+        print(f"[API][TRACE] MongoDB update result for report_id={report_id}: matched_count={result.matched_count}, modified_count={result.modified_count}, upserted_id={result.upserted_id}")
     except Exception as exc:
-        print(f"[API][dynamic] MongoDB persist error: {exc}")
+        print(f"[API][ERROR] MongoDB persist error for report_id={report_id}: {exc}")
+        import traceback
+        traceback.print_exc()
+
+
+def _dynamic_add_runtime(report_id: str, started_at: datetime, ended_at: datetime) -> None:
+    """Accumulate active runtime in MongoDB, excluding paused waiting time."""
+    try:
+        delta = (ended_at - started_at).total_seconds()
+        if delta < 0:
+            delta = 0
+        print(f"[API][TRACE] _dynamic_add_runtime() called: report_id={report_id}, started_at={started_at}, ended_at={ended_at}, delta_seconds={delta}")
+        
+        result = reports_collection.update_one(
+            {"_id": ObjectId(report_id)},
+            {
+                "$inc": {"runtime_seconds": delta},
+                "$set": {"updated_at": ended_at},
+            },
+            upsert=True,
+        )
+        print(f"[API][TRACE] _dynamic_add_runtime() update result: matched_count={result.matched_count}, modified_count={result.modified_count}, upserted_id={result.upserted_id}")
+    except Exception as exc:
+        print(f"[API][ERROR] Runtime update error: {exc}")
+        import traceback
+        traceback.print_exc()
 
 @app.post("/suggest-target")
 async def suggest_target(file: UploadFile = File(...)):
@@ -222,17 +250,13 @@ async def run_pipeline(
                      "error": str(exc), "cache_hit": False, "_state": {}},
                 )
             finally:
-                # Sentinel: signals the async consumer that the pipeline is done
                 loop.call_soon_threadsafe(queue.put_nowait, None)
 
-        # Fire the pipeline in the background — don't await it here
         executor.submit(run_pipeline_in_thread)
-
-        # Consume events as they arrive; each await unblocks the SSE flush
         while True:
-            event = await queue.get()   # blocks only until the next stage finishes
+            event = await queue.get()   
             if event is None:
-                break                   # sentinel → pipeline done
+                break                  
 
             node_name = event["node_name"]
             agent_output = event["agent_output"]
@@ -241,7 +265,6 @@ async def run_pipeline(
 
             print(f"Streaming: {node_name}  (cache_hit={cache_hit})")
 
-            # Record start_time once
             if not start_recorded:
                 reports_collection.update_one(
                     {"_id": ObjectId(report_id)},
@@ -249,7 +272,6 @@ async def run_pipeline(
                 )
                 start_recorded = True
 
-            # Mirror to Mongo (skip the cache_check banner — it has no output)
             if agent_output is not None:
                 reports_collection.update_one(
                     {"_id": ObjectId(report_id)},
@@ -265,7 +287,6 @@ async def run_pipeline(
                 "reportId":  report_id,
             }
             yield f"data: {json.dumps(payload, default=str)}\n\n"
-            # No sleep needed — queue.get() already yields control each iteration
 
         end_time = datetime.utcnow()
         report   = reports_collection.find_one({"_id": ObjectId(report_id)})
@@ -313,10 +334,15 @@ async def run_custom_pipeline(
 
     _dynamic_persist_to_mongo(report_id, result)
 
-    return {
-        "status": "success",
-        "result": result,
-    }
+    def event_generator():
+        states = result.get("states") if isinstance(result, dict) else None
+        if states and isinstance(states, list):
+            for st in states:
+                payload = {"status": "state_completed", "state": st, "reportId": report_id, "datasetId": dataset_id}
+                yield f"data: {json.dumps(payload, default=str)}\n\n"
+        yield f"data: {json.dumps({'status': 'completed', 'reportId': report_id, 'datasetId': dataset_id, 'result': result}, default=str)}\n\n"
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 @app.post("/dynamic/run/{report_id}")
 async def dynamic_run_pipeline(
@@ -354,20 +380,45 @@ async def dynamic_run_pipeline(
         return _dynamic_controller.run({
             "data_path":     str(file_path),
             "prompt":        prompt,
-            "target_column": target_column,   # None → Intent Detector will infer
-            "report_id":     report_id,        # doubles as thread_id in MemorySaver
+             # None → Intent Detector will infer
+            "target_column": target_column,  
+            "report_id":     report_id,      
         })
 
+    run_started_at = datetime.utcnow()
+    print(f"[API][TRACE] /dynamic/run/{report_id} execution started at {run_started_at}")
     state = await loop.run_in_executor(executor, _run)
+    run_ended_at = datetime.utcnow()
+    run_elapsed = (run_ended_at - run_started_at).total_seconds()
+    print(f"[API][TRACE] /dynamic/run/{report_id} execution ended at {run_ended_at}, elapsed={run_elapsed}s")
 
+    print(f"[API][TRACE] Calling _dynamic_add_runtime for report_id={report_id}")
+    runtime_start = datetime.utcnow()
+    _dynamic_add_runtime(report_id, run_started_at, run_ended_at)
+    runtime_end = datetime.utcnow()
+    print(f"[API][TRACE] _dynamic_add_runtime completed in {(runtime_end - runtime_start).total_seconds()}s")
+    
+    print(f"[API][TRACE] Calling _dynamic_persist_to_mongo for report_id={report_id}")
+    persist_start = datetime.utcnow()
     _dynamic_persist_to_mongo(report_id, state)
-    return JSONResponse(content=_dynamic_state_to_response(state, run_id=report_id))
+    persist_end = datetime.utcnow()
+    print(f"[API][TRACE] _dynamic_persist_to_mongo completed in {(persist_end - persist_start).total_seconds()}s")
+    
+    response_start = datetime.utcnow()
+    response = _dynamic_state_to_response(state, run_id=report_id)
+    response_end = datetime.utcnow()
+    print(f"[API][TRACE] /dynamic/run/{report_id} response conversion completed in {(response_end - response_start).total_seconds()}s")
+    # Use the recorded run end time to report actual pipeline execution duration
+    print(f"[API][TRACE] /dynamic/run/{report_id} total processing time: {(run_ended_at - run_started_at).total_seconds()}s")
+    return JSONResponse(content=response)
 
 @app.post("/dynamic/resume/{run_id}")
 async def dynamic_resume_pipeline(
     run_id:        str,
-    decision:      str = Form(...),   # "accept" | "feedback"
-    feedback_text: str = Form(""),    # only used when decision == "feedback"
+    # "accept" | "feedback"
+    decision:      str = Form(...), 
+    # only used when decision == "feedback"  
+    feedback_text: str = Form(""),    
 ):
     """
     Resume a paused HITL checkpoint.
@@ -416,9 +467,17 @@ async def dynamic_resume_pipeline(
             feedback_text=feedback_text,
         )
 
+    resume_started_at = datetime.utcnow()
+    print(f"[API][TRACE] /dynamic/resume/{run_id} execution started at {resume_started_at}")
     state = await loop.run_in_executor(executor, _resume)
+    resume_ended_at = datetime.utcnow()
+    print(f"[API][TRACE] /dynamic/resume/{run_id} execution ended at {resume_ended_at}, elapsed={(resume_ended_at - resume_started_at).total_seconds()}s")
 
+    print(f"[API][TRACE] Calling _dynamic_add_runtime for run_id={run_id}")
+    _dynamic_add_runtime(run_id, resume_started_at, resume_ended_at)
+    print(f"[API][TRACE] Calling _dynamic_persist_to_mongo for run_id={run_id}")
     _dynamic_persist_to_mongo(run_id, state)
+    print(f"[API][TRACE] /dynamic/resume/{run_id} persistence complete")
     return JSONResponse(content=_dynamic_state_to_response(state, run_id=run_id))
 
 @app.get("/dynamic/status/{run_id}")
