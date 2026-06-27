@@ -29,7 +29,7 @@ BASE_DIR = Path(__file__).resolve().parent
 UPLOAD_DIR = BASE_DIR / "uploads"
 UPLOAD_DIR.mkdir(exist_ok=True)
 
-PLOT_OUTPUT_DIR = Path("D:/Automl/GP/output")
+PLOT_OUTPUT_DIR = Path(os.getenv("PLOT_OUTPUT_DIR", "/app/output"))
 PLOT_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/output", StaticFiles(directory=str(PLOT_OUTPUT_DIR)), name="plot_output")
 
