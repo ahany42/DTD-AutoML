@@ -63,7 +63,7 @@ from graph.knowledge_graph import update_agent_progress
 logger = logging.getLogger(__name__)
 
 _AGENT_NAME = "eda"
-_OUTPUT_DIR_TEMPLATE = "../../../Output/eda/{run_id}"
+_OUTPUT_DIR_TEMPLATE = str(Path(__file__).resolve().parent.parent.parent.parent / "Output" / "eda" / "{run_id}")
 
 
 # ─────────────────────────────────────────────

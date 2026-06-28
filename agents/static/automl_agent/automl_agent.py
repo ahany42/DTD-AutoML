@@ -1539,7 +1539,7 @@ Provide your analysis and decision:
         logger.info(f"Best model: {metrics['best_model']} with {best_metric_name}: {best_score:.4f}")
         return best_model, metrics
     
-    def _save_outputs(self, state: AgentState, output_dir: str = "../../output/automl") -> dict:
+    def _save_outputs(self, state: AgentState, output_dir: str = "Output/automl") -> dict:
         """
         Save all training stage outputs:
         - results.json  → full metrics, configs, reasoning
@@ -1768,8 +1768,8 @@ Provide your analysis and decision:
 
         return saved_paths
     
-    # AFTER
-    def run(self, data_path: str, target_column: str = None, output_dir: str = "../../output/automl", automl_directives: dict = None, problem_type: str = None) -> dict:
+    def run(self, data_path: str, target_column: str = None, output_dir: str = "Output/automl", 
+            automl_directives: dict = None, problem_type: str = None) -> dict:
         """
         Run the complete AutoML workflow.
 
