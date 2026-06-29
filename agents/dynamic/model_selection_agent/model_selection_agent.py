@@ -99,7 +99,7 @@ def model_selection_node(state: PipelineState) -> dict:
     train_tool = result.get("train_tool", "unknown")
     status_val = result.get("status", "success")
 
-    if status_val == "success":
+    if status_val in ("success", "planned"):
         update_step("Approach Plan", "completed", f"Selected training method: '{train_tool}'.")
         update_step("Tuning Config", "completed", f"Generated AutoML config: {result.get('message', '')}.")
     else:
